@@ -9,11 +9,12 @@
 
     <com.jjoe64.graphview.GraphView
         android:id="@+id/graph"
-        android:layout_width="326dp"
-        android:layout_height="220dp"
+        android:layout_width="294dp"
+        android:layout_height="199dp"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.08"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0"
@@ -23,11 +24,11 @@
         android:id="@+id/pieChart"
         android:layout_width="298dp"
         android:layout_height="226dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/graph"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/graph"
-        app:layout_constraintVertical_bias="0.110000014">
+        app:layout_constraintHorizontal_bias="0.69"
+        app:layout_constraintStart_toEndOf="@+id/graph"
+        app:layout_constraintTop_toTopOf="@+id/graph">
 
     </com.github.mikephil.charting.charts.PieChart>
 
