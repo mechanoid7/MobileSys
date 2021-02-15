@@ -10,4 +10,7 @@
     <color name="green">#2FFF00</color>
     <color name="yellow">#FFD22E</color>
     <color name="red">#FF0000</color>
+
+    <color name="filmTitleColor">#000000</color>
+    <color name="filmSecondaryColor">#424242</color>
 </resources>

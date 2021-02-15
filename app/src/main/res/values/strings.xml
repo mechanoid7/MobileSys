@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">PMS_MobileLab</string>
     <string name="title_main_tab">Home</string>
-    <string name="title_sec_tab">Sec tab</string>
-    <string name="title_th_tab">Third tab</string>
+    <string name="title_sec_tab">Graph</string>
+    <string name="title_th_tab">Films</string>
 
 
     <string name="main_text">"Вотриков Никита \n Група IO-82 \n ЗК IO-8206"</string>

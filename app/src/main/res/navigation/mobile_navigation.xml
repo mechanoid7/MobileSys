@@ -19,7 +19,7 @@
 
     <fragment
         android:id="@+id/navigation_notifications"
-        android:name="ua.kpi.comsys.IO8206.ui.notifications.NotificationsFragment"
+        android:name="ua.kpi.comsys.IO8206.ui.films.FilmsList"
         android:label="@string/title_th_tab"
         tools:layout="@layout/fragment_third_tab" />
 </navigation>
