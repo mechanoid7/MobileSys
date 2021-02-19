@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <TextView
+        android:id="@+id/filmTitleDetail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginBottom="5dp"
+        android:maxLines="3"
+        android:text="Title"
+        android:textColor="@color/filmTitleColor"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/top_guideline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_guideline"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/right_guideline"
+        app:layout_constraintTop_toTopOf="@+id/top_guideline">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <TextView
+                    android:id="@+id/filmRuntimeDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Runtime"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmReleasedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmReleasedDetail" />
+
+                <TextView
+                    android:id="@+id/filmDirectorDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Director"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmReleasedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmRuntimeDetail" />
+
+                <TextView
+                    android:id="@+id/filmTypeDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Type"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmReleasedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmDirectorDetail" />
+
+                <TextView
+                    android:id="@+id/filmImdbVotesDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="imdbVotes"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintBottom_toBottomOf="@+id/filmImdbRatingDetail"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/filmImdbRatingDetail"
+                    app:layout_constraintTop_toTopOf="@+id/filmImdbRatingDetail" />
+
+                <TextView
+                    android:id="@+id/filmReleasedDetail"
+                    android:layout_width="136dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="ReleasedDate"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/filmCountryDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Country"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmReleasedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmTypeDetail" />
+
+                <TextView
+                    android:id="@+id/filmActorsDetail"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Actors"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmImdbRatingDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmAwardsDetail" />
+
+                <TextView
+                    android:id="@+id/filmLanguageDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Language"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmReleasedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmCountryDetail" />
+
+                <TextView
+                    android:id="@+id/filmProductionDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Production"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmReleasedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmLanguageDetail" />
+
+                <TextView
+                    android:id="@+id/filmAwardsDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Awards"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmRatedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmImdbRatingDetail" />
+
+                <TextView
+                    android:id="@+id/filmGenreDetail"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Genre"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmImdbRatingDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmActorsDetail" />
+
+                <TextView
+                    android:id="@+id/filmWriterDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Writer"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmReleasedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmProductionDetail" />
+
+                <TextView
+                    android:id="@+id/filmRatedDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Rated"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmReleasedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmWriterDetail" />
+
+                <TextView
+                    android:id="@+id/filmImdbRatingDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="imdbRating"
+                    android:textColor="@color/filmSecondaryColor"
+                    app:layout_constraintStart_toStartOf="@+id/filmReleasedDetail"
+                    app:layout_constraintTop_toBottomOf="@+id/filmRatedDetail" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/left_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.05" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/right_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.50" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/top_guideline"
+        app:layout_constraintGuide_percent=".15"
+        android:orientation="horizontal"/>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/bottom_guideline"
+        app:layout_constraintGuide_percent=".50"
+        android:orientation="horizontal"/>
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/bottom_guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.95" />
+
+    <ImageView
+        android:id="@+id/filmPosterDetail"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintLeft_toLeftOf="@+id/left_guideline"
+        app:layout_constraintRight_toRightOf="@+id/right_guideline"
+        app:layout_constraintTop_toTopOf="@+id/top_guideline"
+        app:layout_constraintBottom_toBottomOf="@+id/bottom_guideline"
+
+
+        tools:srcCompat="@tools:sample/avatars" />
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="15dp"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_guideline2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.06"
+        app:layout_constraintStart_toStartOf="@+id/left_guideline"
+        app:layout_constraintTop_toTopOf="@+id/bottom_guideline">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/filmPlotDetail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="15dp"
+                android:text="Plot"
+                android:textColor="#2B2B2B"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </ScrollView>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
