@@ -82,7 +82,7 @@ public class FilmDetail extends AppCompatActivity {
             plot.setText(film.getPlot());
 
         }
-        else {Toast.makeText(this, "Ошибка загрузки", Toast.LENGTH_LONG).show(); finish();}
+        else {Toast.makeText(this, "Information not found", Toast.LENGTH_LONG).show(); finish();}
     }
 
     public void setFilm(Film film) {

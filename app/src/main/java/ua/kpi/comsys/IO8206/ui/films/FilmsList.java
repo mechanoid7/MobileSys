@@ -1,15 +1,11 @@
 package ua.kpi.comsys.IO8206.ui.films;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.ColorFilter;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,27 +15,23 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import org.w3c.dom.ls.LSOutput;
-
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import ua.kpi.comsys.IO8206.AddFilmActivity;
 import ua.kpi.comsys.IO8206.Film;
@@ -53,22 +45,32 @@ public class FilmsList extends Fragment {
     private List<Film> filmsToShow = new ArrayList<>();
     private FilmAdapter adapter;
     ListView listView;
-    Boolean elemAddOnStop = false;
-
+    Boolean elemAddOnStop = false; // добавление элемента и необходимо обновить список
+    Boolean searchMode = false; // режим поиска по списку
+    String userFileMovie =  "movieslistuser.txt"; // стандартное значение, которое заменится
+    String freeSpace = (new String(new char[100]).replace("\0", "\t"));
     Film removedElement=null;
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+//        if(isAdded()){
+//            userFileMovie = getResources().getString(R.string.user_films_list); // берём имя файла из ресурсов
+//        }
     }
 
     @Override
     public void onStop() {
         super.onStop();
 //        adapter.notifyDataSetChanged();
-        elemAddOnStop = true;
     }
+
+//    @Override
+//    public void onDestroy() {
+//        super.onDestroy();
+//        Toast.makeText(getContext(), "Good luck :)", Toast.LENGTH_LONG).show();
+//    }
 
     @Override
     public void onPause() {
@@ -89,7 +91,7 @@ public class FilmsList extends Fragment {
 
         View root = inflater.inflate(R.layout.fragment_third_tab, container, false);
         JsonHelper jsonHelper = new JsonHelper(R.raw.movieslist);
-        jsonHelper.setFileUserName("movieslist.txt");
+        jsonHelper.setFileUserName(userFileMovie);
         EditText searchRequest = root.findViewById(R.id.filmSearchField); // поле поиска
 
         Button searchBtn = root.findViewById(R.id.buttonSearch);
@@ -102,10 +104,10 @@ public class FilmsList extends Fragment {
             adapter = new FilmAdapter(getActivity(), R.layout.activity_list, films);
 
             listView.setAdapter(adapter);
-            Toast.makeText(getContext(), "Загружено", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "Loaded", Toast.LENGTH_LONG).show();
         }
         else{
-            Toast.makeText(getContext(), "Не удалось открыть данные", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "Failed to get data", Toast.LENGTH_LONG).show();
         }
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() { // нажатие на элемент списка
@@ -123,45 +125,47 @@ public class FilmsList extends Fragment {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View itemClicked, int position,
                                            long id) {
-                itemClicked.setBackgroundResource(R.color.light_red); // выделить элемент
-                try {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                    builder.setTitle("Deleting");
-                    builder.setMessage("Do you want to delete this movie?");
-                    builder.setCancelable(true);
-                    builder.setOnCancelListener(new DialogInterface.OnCancelListener() { // закрыть диалог
-                        @Override
-                        public void onCancel(DialogInterface dialog) {
-                            itemClicked.setBackgroundResource(R.color.white); // вернуть цвет
-                        }
-                    });
+                if(!searchMode) {
+                    itemClicked.setBackgroundResource(R.color.light_red); // выделить элемент
+                    try {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                        builder.setTitle("Deleting");
+                        builder.setMessage("Do you want to delete this movie?");
+                        builder.setCancelable(true);
+                        builder.setOnCancelListener(new DialogInterface.OnCancelListener() { // закрыть диалог
+                            @Override
+                            public void onCancel(DialogInterface dialog) {
+                                itemClicked.setBackgroundResource(R.color.white); // вернуть цвет
+                            }
+                        });
 
-                    builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() { // Кнопка ОК
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            removedElement = films.remove((int)id); // удалить выбранный элемент
-                            adapter.notifyDataSetChanged(); // обновить окно
-                            dialog.dismiss(); // Отпускает диалоговое окно
-                        }
+                        builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() { // Кнопка YES
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                removedElement = films.remove((int) id); // удалить выбранный элемент
+                                adapter.notifyDataSetChanged(); // обновить окно
+                                jsonHelper.exportToJSON(getContext(), films);
+                                elemAddOnStop = true;
+                                dialog.dismiss(); // Отпускает диалоговое окно
+                            }
 
-                    });
-                    AlertDialog dialog = builder.create();
-                    dialog.show(); // показать диалог
+                        });
+                        AlertDialog dialog = builder.create();
+                        dialog.show(); // показать диалог
 
+                    } catch (Exception e) {
+                        Toast.makeText(getContext(), "Deleting error", Toast.LENGTH_LONG).show();
+                    }
                 }
-                catch (Exception e){
-                    Toast.makeText(getContext(), "Deleting error", Toast.LENGTH_LONG).show();
-                }
-                jsonHelper.exportToJSON(getContext(), films);
-
+                else Toast.makeText(getContext(), "To delete. you must leave the search mode", Toast.LENGTH_LONG).show();
                 return true;
             }
         });
 
         addFilmBtn.setOnClickListener(new View.OnClickListener() { // при нажатии на кнопку "добавить"
             public void onClick(View view) {
+                elemAddOnStop = true;
                 startActivity(new Intent(getContext(), AddFilmActivity.class).putExtra("moviesListId", R.raw.movieslist));
-//                System.out.println("AFTER ACTIVITY");
             }
         });
 
@@ -172,7 +176,24 @@ public class FilmsList extends Fragment {
                 FilmAdapter adapter2;
                 searchedFilms.clear();
 
-                if(!fieldText.equals("")){
+                if (fieldText.equals("!reset")){ // сброс пользовательский изменений
+                    File userFile = new File(view.getContext().getFilesDir() + "/" + userFileMovie);
+
+                    try(FileWriter writer = new FileWriter(userFile)){
+                        jsonHelper.setUserFileEnable(false);
+                        writer.write(jsonHelper.getStringFromRawFile(getContext())); // запись в файл юзерспейса JSON`а
+                        writer.flush();
+                    }
+                    catch(IOException ex){
+                        ex.printStackTrace();
+                    }
+                    getActivity().recreate();
+                    Toast.makeText(getContext(), "User list has been reset", Toast.LENGTH_LONG).show();
+                    adapter2 = new FilmAdapter(getActivity(), R.layout.activity_list, films); // адаптер с стандартным списком
+                }
+
+                else if(!fieldText.equals("")){
+                    searchMode = true;
                     for (int i = 0; i < films.size(); i++) {
                         if(films.get(i).getTitle().toLowerCase().contains(fieldText)){ // ищем совпадения в заголовках и добавляем в
                             // второй список фильмов, если есть совпадения
@@ -187,6 +208,7 @@ public class FilmsList extends Fragment {
                     adapter2 = new FilmAdapter(getActivity(), R.layout.activity_list, new ArrayList<>(searchedFilms)); // адаптер с новыми фильмами
                 }
                 else {
+                    searchMode = false;
                     adapter2 = new FilmAdapter(getActivity(), R.layout.activity_list, films); // адаптер с стандартным списком
                 };
                 listView.setAdapter(adapter2);
@@ -213,7 +235,7 @@ public class FilmsList extends Fragment {
 
             title.setText(handle(filmsToShow.get(position).getTitle())); // запись всех параметров
             year.setText("Year: " + handle(filmsToShow.get(position).getYear()));
-            type.setText("Type: " + handle(filmsToShow.get(position).getType()));
+            type.setText("Type: " + handle(filmsToShow.get(position).getType())+" "+freeSpace);
 
             ImageView iconImageView = (ImageView) row.findViewById(R.id.poster);
 

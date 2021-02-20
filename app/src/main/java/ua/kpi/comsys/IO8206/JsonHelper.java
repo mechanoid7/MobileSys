@@ -167,7 +167,7 @@ public class JsonHelper {
 //        }
 //    }
 
-    private static String getStringFromRawFile(Context context) {
+    public static String getStringFromRawFile(Context context) {
         InputStream is = null;
         if(!userFileEnable) { // если НЕ доступна пользовательская версия списка фильмов
             Resources r = context.getResources();

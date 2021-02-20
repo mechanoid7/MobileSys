@@ -40,11 +40,17 @@ public class AddFilmActivity extends AppCompatActivity {
     ByteArrayOutputStream bos;
     Random random = new Random();
     Boolean uploadedImage = false;
+    String userFileMovie =  "movieslistuser.txt"; // стандартное значение, которое заменится
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+//        try {
+//            userFileMovie = getResources().getString(R.string.user_films_list); // берём имя файла из ресурсов
+//        } catch (Exception e){}
+
         setContentView(R.layout.activity_add_film);
 
         imageView = (ImageView) findViewById(R.id.imageView_filmAdd);
@@ -53,8 +59,6 @@ public class AddFilmActivity extends AppCompatActivity {
 
         Bundle arguments = getIntent().getExtras();
         resFilmList = (int)arguments.get("moviesListId");
-        System.out.println("RES: "+ resFilmList);
-
     }
 
     public void choosePoster(View view) { // кнопка выбрать изображение
@@ -71,12 +75,12 @@ public class AddFilmActivity extends AppCompatActivity {
 
         String newPosterName;
 
-        if(filmTitle.length()<2){ // некорректный заголовок
+        if(filmTitle.length()<1){ // некорректный заголовок
             Toast.makeText(view.getContext(), "Uncorrected title", Toast.LENGTH_LONG).show();
         }
         else {
             JsonHelper jsonHelper = new JsonHelper(resFilmList);
-            jsonHelper.setFileUserName("movieslist.txt");
+            jsonHelper.setFileUserName(userFileMovie);
             films = jsonHelper.importFilmListFromJSON(view.getContext()); // берём фильмы из файла
 
             if(uploadedImage){ // если выбрано изображение
@@ -110,16 +114,6 @@ public class AddFilmActivity extends AppCompatActivity {
                     "", "", "", "", "", "", "" ));
 
             jsonHelper.exportToJSON(view.getContext(), films);
-//            try{
-//                getParent().
-//
-////                Intent refresh = new Intent(this, FilmsList.class); // обновление активити со списком
-////
-////                startActivity(refresh);
-//
-//            } catch (Exception e){
-//                e.printStackTrace();
-//            }
 
             finish();
             Toast.makeText(view.getContext(), "Added successfully", Toast.LENGTH_LONG).show();

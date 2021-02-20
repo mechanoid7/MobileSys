@@ -29,7 +29,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/filmSearchField" >
+        app:layout_constraintTop_toBottomOf="@+id/filmSearchField">
 
     </ListView>
 
@@ -40,7 +40,7 @@
         android:layout_marginStart="5dp"
         android:ems="10"
         android:hint="Movie title..."
-        android:inputType="textPersonName|text"
+        android:inputType="text"
         android:textColor="#1C1C1C"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline2"
