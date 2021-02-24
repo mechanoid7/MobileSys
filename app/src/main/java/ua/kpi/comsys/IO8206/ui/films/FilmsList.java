@@ -35,9 +35,10 @@ import java.util.List;
 
 import ua.kpi.comsys.IO8206.AddFilmActivity;
 import ua.kpi.comsys.IO8206.Film;
-import ua.kpi.comsys.IO8206.JsonHelper;
+import ua.kpi.comsys.IO8206.JsonHelperFilms;
 import ua.kpi.comsys.IO8206.R;
 import ua.kpi.comsys.IO8206.ui.FilmDetail;
+import ua.kpi.comsys.IO8206.ui.images.JsonHelperImages;
 
 public class FilmsList extends Fragment {
     private List<Film> films;
@@ -90,18 +91,18 @@ public class FilmsList extends Fragment {
                              ViewGroup container, Bundle savedInstanceState) {
 
         View root = inflater.inflate(R.layout.fragment_third_tab, container, false);
-        JsonHelper jsonHelper = new JsonHelper(R.raw.movieslist);
-        jsonHelper.setFileUserName(userFileMovie);
+        JsonHelperFilms jsonHelperFilms = new JsonHelperFilms(R.raw.movieslist);
+        jsonHelperFilms.setFileUserName(userFileMovie);
         EditText searchRequest = root.findViewById(R.id.filmSearchField); // поле поиска
 
         Button searchBtn = root.findViewById(R.id.buttonSearch);
-        FloatingActionButton addFilmBtn = root.findViewById(R.id.filmAddBtn);
+        FloatingActionButton addFilmBtn = root.findViewById(R.id.imageAddBtn);
 
         listView = root.findViewById(R.id.filmsList);
-        films = jsonHelper.importFilmListFromJSON(getContext()); // берём фильмы из файла
+        films = jsonHelperFilms.importFilmListFromJSON(getContext()); // берём фильмы из файла
 
         if(films != null){
-            adapter = new FilmAdapter(getActivity(), R.layout.activity_list, films);
+            adapter = new FilmAdapter(getActivity(), R.layout.films_list, films);
 
             listView.setAdapter(adapter);
             Toast.makeText(getContext(), "Loaded", Toast.LENGTH_LONG).show();
@@ -144,7 +145,7 @@ public class FilmsList extends Fragment {
                             public void onClick(DialogInterface dialog, int which) {
                                 removedElement = films.remove((int) id); // удалить выбранный элемент
                                 adapter.notifyDataSetChanged(); // обновить окно
-                                jsonHelper.exportToJSON(getContext(), films);
+                                jsonHelperFilms.exportToJSON(getContext(), films);
                                 elemAddOnStop = true;
                                 dialog.dismiss(); // Отпускает диалоговое окно
                             }
@@ -179,17 +180,33 @@ public class FilmsList extends Fragment {
                 if (fieldText.equals("!reset")){ // сброс пользовательский изменений
                     File userFile = new File(view.getContext().getFilesDir() + "/" + userFileMovie);
 
+                    JsonHelperImages jsonHelperImages = new JsonHelperImages(); // экземпляр класса фотографий для сброса
+                    jsonHelperImages.setFileUserName("images_list.txt");
+                    List<List<String>> images= jsonHelperImages.importStringListFromJSON(getContext());
+                    for (int i = 0; i < images.size(); i++) {
+                        for (int j = 0; j < images.get(i).size(); j++) {
+                            try {
+                                File toDelete = new File(getContext().getFilesDir() + "/"+images.get(i).get(j)); //удаление загруженных фото
+                                toDelete.delete();
+                            } catch (Exception e){}
+
+                        }
+                    }
+
+                    jsonHelperImages.exportToJSON(getContext(), new ArrayList<>()); // обнуление списка фотографий
+
+
                     try(FileWriter writer = new FileWriter(userFile)){
-                        jsonHelper.setUserFileEnable(false);
-                        writer.write(jsonHelper.getStringFromRawFile(getContext())); // запись в файл юзерспейса JSON`а
+                        jsonHelperFilms.setUserFileEnable(false);
+                        writer.write(jsonHelperFilms.getStringFromRawFile(getContext())); // запись в файл юзерспейса JSON`а
                         writer.flush();
                     }
                     catch(IOException ex){
                         ex.printStackTrace();
                     }
                     getActivity().recreate();
-                    Toast.makeText(getContext(), "User list has been reset", Toast.LENGTH_LONG).show();
-                    adapter2 = new FilmAdapter(getActivity(), R.layout.activity_list, films); // адаптер с стандартным списком
+                    Toast.makeText(getContext(), "User lists has been reset", Toast.LENGTH_LONG).show();
+                    adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, films); // адаптер с стандартным списком
                 }
 
                 else if(!fieldText.equals("")){
@@ -205,11 +222,11 @@ public class FilmsList extends Fragment {
                         Toast.makeText(getContext(), "Ничего не найдено :(", Toast.LENGTH_LONG).show();
                     }
                     else Toast.makeText(getContext(), "Загружено", Toast.LENGTH_LONG).show();
-                    adapter2 = new FilmAdapter(getActivity(), R.layout.activity_list, new ArrayList<>(searchedFilms)); // адаптер с новыми фильмами
+                    adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, new ArrayList<>(searchedFilms)); // адаптер с новыми фильмами
                 }
                 else {
                     searchMode = false;
-                    adapter2 = new FilmAdapter(getActivity(), R.layout.activity_list, films); // адаптер с стандартным списком
+                    adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, films); // адаптер с стандартным списком
                 };
                 listView.setAdapter(adapter2);
             }
@@ -227,7 +244,7 @@ public class FilmsList extends Fragment {
         @Override
         public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) { // переопределение
             LayoutInflater inflater = getLayoutInflater();
-            View row = inflater.inflate(R.layout.activity_list, parent, false);
+            View row = inflater.inflate(R.layout.films_list, parent, false);
 
             TextView title = (TextView) row.findViewById(R.id.filmTitle); // связь данных и ИД слоя
             TextView year = (TextView) row.findViewById(R.id.filmReleasedDetail);

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="8dip"
+    android:paddingTop="1dip"
+    android:paddingEnd="8dip"
+    android:paddingBottom="1dip">
+
+    <ImageView
+        android:id="@+id/poster"
+        android:layout_width="150dip"
+        android:layout_height="150dip"
+        android:src="@drawable/poster_01" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="10dp"
+        android:layout_height="match_parent">
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/filmTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:maxLines="4"
+            android:text="Film name"
+            android:textAlignment="center"
+            android:textColor="@color/filmTitleColor"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/filmReleasedDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="Year"
+            android:textColor="@color/filmSecondaryColor"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/filmTitle" />
+
+        <TextView
+            android:id="@+id/filmType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:text="Type"
+            android:textColor="@color/filmSecondaryColor"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/filmReleasedDetail" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!--    android:paddingStart="?android:attr/listPreferredItemPaddingStart" />-->
+</LinearLayout>
+

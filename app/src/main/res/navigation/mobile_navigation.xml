@@ -18,8 +18,14 @@
         tools:layout="@layout/fragment_sec_tab" />
 
     <fragment
-        android:id="@+id/navigation_notifications"
+        android:id="@+id/navigation_films"
         android:name="ua.kpi.comsys.IO8206.ui.films.FilmsList"
         android:label="@string/title_th_tab"
         tools:layout="@layout/fragment_third_tab" />
+
+    <fragment
+        android:id="@+id/navigation_images"
+        android:name="ua.kpi.comsys.IO8206.ui.images.ImagesList"
+        android:label="@string/title_img_tab"
+        tools:layout="@layout/fragment_four_tab" />
 </navigation>

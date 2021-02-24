@@ -1,9 +1,6 @@
 package ua.kpi.comsys.IO8206.ui;
 
 import android.os.Bundle;
-import android.text.method.ScrollingMovementMethod;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -12,7 +9,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import ua.kpi.comsys.IO8206.Film;
-import ua.kpi.comsys.IO8206.JsonHelper;
+import ua.kpi.comsys.IO8206.JsonHelperFilms;
 import ua.kpi.comsys.IO8206.R;
 
 public class FilmDetail extends AppCompatActivity {
@@ -29,12 +26,12 @@ public class FilmDetail extends AppCompatActivity {
 
         int res = this.getResources().getIdentifier(imbdId, "raw", this.getPackageName()); // поиск ИД по имени
 
-        JsonHelper jsonHelper = new JsonHelper(res);
-        jsonHelper.setUserFileEnable(false);
+        JsonHelperFilms jsonHelperFilms = new JsonHelperFilms(res);
+        jsonHelperFilms.setUserFileEnable(false);
 
 
         if(res!=0) {
-            film = jsonHelper.importFilmFromJSON(this); // если есть такой ИД
+            film = jsonHelperFilms.importFilmFromJSON(this); // если есть такой ИД
             TextView title = findViewById(R.id.filmTitleDetail);
             TextView releasedDate = findViewById(R.id.filmReleasedDetail);
             TextView rated = findViewById(R.id.filmRatedDetail);

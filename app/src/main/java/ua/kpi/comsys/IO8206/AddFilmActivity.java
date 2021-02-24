@@ -1,14 +1,10 @@
 package ua.kpi.comsys.IO8206;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
 
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -26,8 +22,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Random;
-
-import ua.kpi.comsys.IO8206.ui.films.FilmsList;
 
 public class AddFilmActivity extends AppCompatActivity {
     int resFilmList;
@@ -79,9 +73,9 @@ public class AddFilmActivity extends AppCompatActivity {
             Toast.makeText(view.getContext(), "Uncorrected title", Toast.LENGTH_LONG).show();
         }
         else {
-            JsonHelper jsonHelper = new JsonHelper(resFilmList);
-            jsonHelper.setFileUserName(userFileMovie);
-            films = jsonHelper.importFilmListFromJSON(view.getContext()); // берём фильмы из файла
+            JsonHelperFilms jsonHelperFilms = new JsonHelperFilms(resFilmList);
+            jsonHelperFilms.setFileUserName(userFileMovie);
+            films = jsonHelperFilms.importFilmListFromJSON(view.getContext()); // берём фильмы из файла
 
             if(uploadedImage){ // если выбрано изображение
                 newPosterName = "poster_"+(random.nextInt(99999)+100) + ".png";
@@ -113,7 +107,7 @@ public class AddFilmActivity extends AppCompatActivity {
                     "", "", "", "", "", "",
                     "", "", "", "", "", "", "" ));
 
-            jsonHelper.exportToJSON(view.getContext(), films);
+            jsonHelperFilms.exportToJSON(view.getContext(), films);
 
             finish();
             Toast.makeText(view.getContext(), "Added successfully", Toast.LENGTH_LONG).show();
@@ -127,6 +121,8 @@ public class AddFilmActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) { // загрузка фото
         super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+
+        System.out.println("ENTER SECTION");
 
         if (requestCode == Pick_image) {
             if (resultCode == RESULT_OK) {
