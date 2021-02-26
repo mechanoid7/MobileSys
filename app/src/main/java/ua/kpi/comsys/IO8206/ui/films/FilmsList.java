@@ -1,11 +1,13 @@
 package ua.kpi.comsys.IO8206.ui.films;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,12 +26,19 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.koushikdutta.async.future.FutureCallback;
+import com.koushikdutta.ion.Ion;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,17 +57,17 @@ public class FilmsList extends Fragment {
     ListView listView;
     Boolean elemAddOnStop = false; // добавление элемента и необходимо обновить список
     Boolean searchMode = false; // режим поиска по списку
+    Boolean filmsApiGet = false; // фильмы получены мз сайта
     String userFileMovie =  "movieslistuser.txt"; // стандартное значение, которое заменится
     String freeSpace = (new String(new char[100]).replace("\0", "\t"));
     Film removedElement=null;
+    String API_KEY = "ed68b378";
+    String REQUEST_FILM_NAME;
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-//        if(isAdded()){
-//            userFileMovie = getResources().getString(R.string.user_films_list); // берём имя файла из ресурсов
-//        }
     }
 
     @Override
@@ -91,15 +100,16 @@ public class FilmsList extends Fragment {
                              ViewGroup container, Bundle savedInstanceState) {
 
         View root = inflater.inflate(R.layout.fragment_third_tab, container, false);
-        JsonHelperFilms jsonHelperFilms = new JsonHelperFilms(R.raw.movieslist);
-        jsonHelperFilms.setFileUserName(userFileMovie);
+        JsonHelperFilms jsonHelperFilms = new JsonHelperFilms();
+        jsonHelperFilms.setFileUserName("searched_list.txt");
+        films = jsonHelperFilms.importFilmListFromJSON(getContext());
+
         EditText searchRequest = root.findViewById(R.id.filmSearchField); // поле поиска
 
-        Button searchBtn = root.findViewById(R.id.buttonSearch);
-        FloatingActionButton addFilmBtn = root.findViewById(R.id.imageAddBtn);
+        Button searchBtn = root.findViewById(R.id.buttonSearch); // кнопка поиска
+        FloatingActionButton addFilmBtn = root.findViewById(R.id.imageAddBtn); // кнопка добавления
 
         listView = root.findViewById(R.id.filmsList);
-        films = jsonHelperFilms.importFilmListFromJSON(getContext()); // берём фильмы из файла
 
         if(films != null){
             adapter = new FilmAdapter(getActivity(), R.layout.films_list, films);
@@ -173,65 +183,122 @@ public class FilmsList extends Fragment {
 
         searchBtn.setOnClickListener(new View.OnClickListener() { // при нажатии на кнопку "поиск"
             public void onClick(View view) {
-                String fieldText = searchRequest.getText().toString().toLowerCase();
+
+                String fieldText = searchRequest.getText().toString().toLowerCase(); // получение текста из поля поиска
                 FilmAdapter adapter2;
-                searchedFilms.clear();
+//                searchedFilms.clear();
+                films.clear();
 
-                if (fieldText.equals("!reset")){ // сброс пользовательский изменений
-                    File userFile = new File(view.getContext().getFilesDir() + "/" + userFileMovie);
+//                if (fieldText.equals("!reset")){ // сброс пользовательский изменений
+//                    File userFile = new File(view.getContext().getFilesDir() + "/" + userFileMovie);
+//
+//                    JsonHelperImages jsonHelperImages = new JsonHelperImages(); // экземпляр класса фотографий для сброса
+//                    jsonHelperImages.setFileUserName("images_list.txt");
+//                    List<List<String>> images= jsonHelperImages.importStringListFromJSON(getContext());
+//                    for (int i = 0; i < images.size(); i++) {
+//                        for (int j = 0; j < images.get(i).size(); j++) {
+//                            try {
+//                                File toDelete = new File(getContext().getFilesDir() + "/"+images.get(i).get(j)); //удаление загруженных фото
+//                                toDelete.delete();
+//                            } catch (Exception e){}
+//
+//                        }
+//                    }
+//
+//                    jsonHelperImages.exportToJSON(getContext(), new ArrayList<>()); // обнуление списка фотографий
+//
+//
+//                    try(FileWriter writer = new FileWriter(userFile)){
+//                        jsonHelperFilms.setUserFileEnable(false);
+//                        writer.write(jsonHelperFilms.getStringFromRawFile(getContext())); // запись в файл юзерспейса JSON`а
+//                        writer.flush();
+//                    }
+//                    catch(IOException ex){
+//                        ex.printStackTrace();
+//                    }
+//                    getActivity().recreate();
+//                    Toast.makeText(getContext(), "User lists has been reset", Toast.LENGTH_LONG).show();
+//                    adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, films); // адаптер с стандартным списком
+//                }
 
-                    JsonHelperImages jsonHelperImages = new JsonHelperImages(); // экземпляр класса фотографий для сброса
-                    jsonHelperImages.setFileUserName("images_list.txt");
-                    List<List<String>> images= jsonHelperImages.importStringListFromJSON(getContext());
-                    for (int i = 0; i < images.size(); i++) {
-                        for (int j = 0; j < images.get(i).size(); j++) {
-                            try {
-                                File toDelete = new File(getContext().getFilesDir() + "/"+images.get(i).get(j)); //удаление загруженных фото
-                                toDelete.delete();
-                            } catch (Exception e){}
-
-                        }
-                    }
-
-                    jsonHelperImages.exportToJSON(getContext(), new ArrayList<>()); // обнуление списка фотографий
-
-
-                    try(FileWriter writer = new FileWriter(userFile)){
-                        jsonHelperFilms.setUserFileEnable(false);
-                        writer.write(jsonHelperFilms.getStringFromRawFile(getContext())); // запись в файл юзерспейса JSON`а
-                        writer.flush();
-                    }
-                    catch(IOException ex){
-                        ex.printStackTrace();
-                    }
-                    getActivity().recreate();
-                    Toast.makeText(getContext(), "User lists has been reset", Toast.LENGTH_LONG).show();
-                    adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, films); // адаптер с стандартным списком
-                }
-
-                else if(!fieldText.equals("")){
+                if(!fieldText.equals("") & fieldText.length()>=3){ // если поле не пустое и больше трёх
                     searchMode = true;
-                    for (int i = 0; i < films.size(); i++) {
-                        if(films.get(i).getTitle().toLowerCase().contains(fieldText)){ // ищем совпадения в заголовках и добавляем в
-                            // второй список фильмов, если есть совпадения
-                            searchedFilms.add(films.get(i));
-                        }
-                    }
 
-                    if(searchedFilms.isEmpty()){
-                        Toast.makeText(getContext(), "Ничего не найдено :(", Toast.LENGTH_LONG).show();
+                    try {
+                        REQUEST_FILM_NAME = fieldText;
+                        filmsApiGet = false;
+
+                        Ion.with(getContext()).load("http://www.omdbapi.com/?apikey="+API_KEY+"&s="+REQUEST_FILM_NAME+"&page=1").asString().setCallback(new FutureCallback<String>() {
+                            @Override
+                            public void onCompleted(Exception e, String result) {
+                                System.out.println(result);
+                                searchedFilms = jsonHelperFilms.importFilmListFromString(result);
+                                System.out.println("FILMS SIZE1: "+searchedFilms.size());
+
+                                jsonHelperFilms.exportToJSON(getContext(), searchedFilms);
+//                                jsonHelperFilms.exportStringToJSON(getContext(), result);
+
+                                FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
+                                listView.setAdapter(adapter3);
+                                filmsApiGet = true;
+
+
+                            }
+                        });
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, new ArrayList<>()); // пустой адаптер
                     }
-                    else Toast.makeText(getContext(), "Загружено", Toast.LENGTH_LONG).show();
-                    adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, new ArrayList<>(searchedFilms)); // адаптер с новыми фильмами
                 }
                 else {
+
                     searchMode = false;
                     adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, films); // адаптер с стандартным списком
                 };
-                listView.setAdapter(adapter2);
+
             }
         });
         return root;
+    }
+
+//    class UpdateAdapter extends Thread {
+//        Activity activityGetted;
+//        UpdateAdapter(Activity activity){
+//            activityGetted = activity;
+//        }
+//
+//        public void run(){
+//            while (!filmsApiGet){
+//                try{Thread.sleep(250);}
+//                catch(InterruptedException e){}
+//            }
+//            activityGetted.recreate();
+//        }
+//    }
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImageTask(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+//                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            bmImage.setImageBitmap(result);
+        }
     }
 
     private class FilmAdapter extends ArrayAdapter<Film>{ // свой адаптер
@@ -256,21 +323,11 @@ public class FilmsList extends Fragment {
 
             ImageView iconImageView = (ImageView) row.findViewById(R.id.poster);
 
-            String posterName = filmsToShow.get(position).getPoster();
-            int res = getContext().getResources().getIdentifier(posterName.replaceAll(".jpg",
-                    ""), "drawable", getContext().getPackageName()); // поиск ИД по имени
+            String posterUrl = filmsToShow.get(position).getPoster();
 
-            if(res!=0) iconImageView.setImageResource(res); // если нет такого ИД
-            else {
-                try { // пробуем установить пользовательское изображение
-                    File imageFile = new File(getContext().getFilesDir() + "/" + posterName); // пользовательское изображение
-                    InputStream is = new FileInputStream(imageFile);
-
-                    Bitmap userImage = BitmapFactory.decodeStream(is); // фото в стрим
-                    iconImageView.setImageBitmap(userImage); // установка фото
-                } catch (Exception e) {iconImageView.setImageResource(R.drawable.kpi_logo);} // стандартная картинка
-
-            }
+            try {
+                new DownloadImageTask(iconImageView).execute(posterUrl); // устанавливаем изображение
+            } catch (Exception e){}
             return row;
         }
 

@@ -73,7 +73,7 @@ public class AddFilmActivity extends AppCompatActivity {
             Toast.makeText(view.getContext(), "Uncorrected title", Toast.LENGTH_LONG).show();
         }
         else {
-            JsonHelperFilms jsonHelperFilms = new JsonHelperFilms(resFilmList);
+            JsonHelperFilms jsonHelperFilms = new JsonHelperFilms();
             jsonHelperFilms.setFileUserName(userFileMovie);
             films = jsonHelperFilms.importFilmListFromJSON(view.getContext()); // берём фильмы из файла
 

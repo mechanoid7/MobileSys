@@ -14,17 +14,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 
 public class JsonHelperFilms {
-    private static int RESOURCE_NAME;
     private static String FILE_USER_NAME;
     private static Boolean userFileEnable = false;
     private static File f;
-
-    public JsonHelperFilms(int resourceName){
-        RESOURCE_NAME = resourceName;
-    }
 
     public static void setFileUserName(String fileUserName) {
         FILE_USER_NAME = fileUserName;
@@ -62,6 +58,34 @@ public class JsonHelperFilms {
         return false;
     }
 
+    public static boolean exportStringToJSON(Context context, String jsonString) { // запись в файл
+
+//        Gson gson = new Gson();
+//        DataItems dataItems = new DataItems();
+//        dataItems.setSearch(dataList);
+//        String jsonString = gson.toJson(dataItems);
+
+        FileOutputStream fileOutputStream = null;
+
+        try {
+            System.out.println("FILENAME: "+FILE_USER_NAME);
+            fileOutputStream = context.openFileOutput(FILE_USER_NAME, Context.MODE_PRIVATE);
+            fileOutputStream.write(jsonString.getBytes());
+            userFileEnable = true;
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (fileOutputStream != null) {
+                try {
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return false;
+    }
 
     public static List<Film> importFilmListFromJSON(Context context) {
         InputStreamReader streamReader = null;
@@ -87,6 +111,40 @@ public class JsonHelperFilms {
 
             DataItems dataItems = gson.fromJson(getStringFromRawFile(context), DataItems.class); // создание объектов из файла
 
+            try {
+                return dataItems.getSearch();
+            } catch (Exception e){return new ArrayList<>();}
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+        finally {
+            if (streamReader != null) {
+                try {
+                    streamReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (fileInputStream != null) {
+                try {
+                    fileInputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
+
+    public static List<Film> importFilmListFromString(String json) {
+        InputStreamReader streamReader = null;
+        FileInputStream fileInputStream = null;
+
+        try{
+            Gson gson = new Gson();
+            DataItems dataItems = gson.fromJson(json, DataItems.class); // создание объектов из файла
+
             return dataItems.getSearch();
         }
         catch (Exception ex){
@@ -108,8 +166,6 @@ public class JsonHelperFilms {
                 }
             }
         }
-
-
         return null;
     }
 
@@ -145,6 +201,38 @@ public class JsonHelperFilms {
         return null;
     }
 
+    public static Film importFilmFromString(String string) {
+//        InputStreamReader streamReader = null;
+//        FileInputStream fileInputStream = null;
+
+        try{
+            Gson gson = new Gson();
+            Film film = gson.fromJson(string, Film.class); // создание объекта из файла
+            return film;
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+//        finally {
+//            if (streamReader != null) {
+//                try {
+//                    streamReader.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            if (fileInputStream != null) {
+//                try {
+//                    fileInputStream.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+
+        return null;
+    }
+
     private static class DataItems {
         private List<Film> Search;
 
@@ -156,29 +244,13 @@ public class JsonHelperFilms {
         }
     }
 
-//    private static class DataItem {
-//        public Film Title;
-//
-//        Film getTitle() {
-//            return Title;
-//        }
-//        void setTitle(Film title) {
-//            this.Title = title;
-//        }
-//    }
 
     public static String getStringFromRawFile(Context context) {
         InputStream is = null;
-        if(!userFileEnable) { // если НЕ доступна пользовательская версия списка фильмов
-            Resources r = context.getResources();
-            is = r.openRawResource(RESOURCE_NAME);
-        }
-        else { // если доступна пользовательская версия списка фильмов
-            try {
-                is = new FileInputStream(f);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+        try {
+            is = new FileInputStream(f);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
 
         String myText = null;
