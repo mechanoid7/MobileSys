@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PMS_MobileLab</string>
+    <string name="app_name">ProMoS</string>
     <string name="title_main_tab">Home</string>
     <string name="title_sec_tab">Graph</string>
     <string name="title_th_tab">Films</string>

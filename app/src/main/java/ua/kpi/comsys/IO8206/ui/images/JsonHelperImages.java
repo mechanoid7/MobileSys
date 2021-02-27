@@ -107,6 +107,21 @@ public class JsonHelperImages {
         return null;
     }
 
+    public static List<List<String>> importStringListFromString(String json) {
+        try{
+            Gson gson = new Gson();
+
+            DataItems dataItems = gson.fromJson(json, DataItems.class); // создание объектов из файла
+            try {
+                return dataItems.getSearch();
+            } catch (Exception e){return new ArrayList<>();}
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     private static class DataItems {
         private List<List<String>> Search;
 

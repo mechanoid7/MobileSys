@@ -1,6 +1,5 @@
 package ua.kpi.comsys.IO8206.ui.films;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -29,25 +28,18 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.koushikdutta.async.future.FutureCallback;
 import com.koushikdutta.ion.Ion;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.sql.SQLOutput;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import ua.kpi.comsys.IO8206.AddFilmActivity;
 import ua.kpi.comsys.IO8206.Film;
 import ua.kpi.comsys.IO8206.JsonHelperFilms;
 import ua.kpi.comsys.IO8206.R;
 import ua.kpi.comsys.IO8206.ui.FilmDetail;
-import ua.kpi.comsys.IO8206.ui.images.JsonHelperImages;
 
 public class FilmsList extends Fragment {
     private List<Film> films;
@@ -58,7 +50,7 @@ public class FilmsList extends Fragment {
     Boolean elemAddOnStop = false; // добавление элемента и необходимо обновить список
     Boolean searchMode = false; // режим поиска по списку
     Boolean filmsApiGet = false; // фильмы получены мз сайта
-    String userFileMovie =  "movieslistuser.txt"; // стандартное значение, которое заменится
+//    String userFileMovie =  "movieslistuser.txt"; // стандартное значение, которое заменится
     String freeSpace = (new String(new char[100]).replace("\0", "\t"));
     Film removedElement=null;
     String API_KEY = "ed68b378";
@@ -173,12 +165,12 @@ public class FilmsList extends Fragment {
             }
         });
 
-        addFilmBtn.setOnClickListener(new View.OnClickListener() { // при нажатии на кнопку "добавить"
-            public void onClick(View view) {
-                elemAddOnStop = true;
-                startActivity(new Intent(getContext(), AddFilmActivity.class).putExtra("moviesListId", R.raw.movieslist));
-            }
-        });
+//        addFilmBtn.setOnClickListener(new View.OnClickListener() { // при нажатии на кнопку "добавить"
+//            public void onClick(View view) {
+//                elemAddOnStop = true;
+//                startActivity(new Intent(getContext(), AddFilmActivity.class).putExtra("moviesListId", R.raw.movieslist));
+//            }
+//        });
 
 
         searchBtn.setOnClickListener(new View.OnClickListener() { // при нажатии на кнопку "поиск"
@@ -186,40 +178,8 @@ public class FilmsList extends Fragment {
 
                 String fieldText = searchRequest.getText().toString().toLowerCase(); // получение текста из поля поиска
                 FilmAdapter adapter2;
-//                searchedFilms.clear();
-                films.clear();
-
-//                if (fieldText.equals("!reset")){ // сброс пользовательский изменений
-//                    File userFile = new File(view.getContext().getFilesDir() + "/" + userFileMovie);
-//
-//                    JsonHelperImages jsonHelperImages = new JsonHelperImages(); // экземпляр класса фотографий для сброса
-//                    jsonHelperImages.setFileUserName("images_list.txt");
-//                    List<List<String>> images= jsonHelperImages.importStringListFromJSON(getContext());
-//                    for (int i = 0; i < images.size(); i++) {
-//                        for (int j = 0; j < images.get(i).size(); j++) {
-//                            try {
-//                                File toDelete = new File(getContext().getFilesDir() + "/"+images.get(i).get(j)); //удаление загруженных фото
-//                                toDelete.delete();
-//                            } catch (Exception e){}
-//
-//                        }
-//                    }
-//
-//                    jsonHelperImages.exportToJSON(getContext(), new ArrayList<>()); // обнуление списка фотографий
-//
-//
-//                    try(FileWriter writer = new FileWriter(userFile)){
-//                        jsonHelperFilms.setUserFileEnable(false);
-//                        writer.write(jsonHelperFilms.getStringFromRawFile(getContext())); // запись в файл юзерспейса JSON`а
-//                        writer.flush();
-//                    }
-//                    catch(IOException ex){
-//                        ex.printStackTrace();
-//                    }
-//                    getActivity().recreate();
-//                    Toast.makeText(getContext(), "User lists has been reset", Toast.LENGTH_LONG).show();
-//                    adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, films); // адаптер с стандартным списком
-//                }
+                if (films!=null)
+                    films.clear();
 
                 if(!fieldText.equals("") & fieldText.length()>=3){ // если поле не пустое и больше трёх
                     searchMode = true;
@@ -233,16 +193,14 @@ public class FilmsList extends Fragment {
                             public void onCompleted(Exception e, String result) {
                                 System.out.println(result);
                                 searchedFilms = jsonHelperFilms.importFilmListFromString(result);
-                                System.out.println("FILMS SIZE1: "+searchedFilms.size());
 
                                 jsonHelperFilms.exportToJSON(getContext(), searchedFilms);
-//                                jsonHelperFilms.exportStringToJSON(getContext(), result);
 
                                 FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
-                                listView.setAdapter(adapter3);
+                                try {
+                                    listView.setAdapter(adapter3);
+                                } catch (Exception e2){}
                                 filmsApiGet = true;
-
-
                             }
                         });
 
@@ -252,7 +210,7 @@ public class FilmsList extends Fragment {
                     }
                 }
                 else {
-
+                    Toast.makeText(getContext(), "Uncorrected request", Toast.LENGTH_LONG).show();
                     searchMode = false;
                     adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, films); // адаптер с стандартным списком
                 };
@@ -317,13 +275,17 @@ public class FilmsList extends Fragment {
             TextView year = (TextView) row.findViewById(R.id.filmReleasedDetail);
             TextView type = (TextView) row.findViewById(R.id.filmType);
 
-            title.setText(handle(filmsToShow.get(position).getTitle())); // запись всех параметров
-            year.setText("Year: " + handle(filmsToShow.get(position).getYear()));
-            type.setText("Type: " + handle(filmsToShow.get(position).getType())+" "+freeSpace);
+            ImageView iconImageView = null;
+            String posterUrl = "";
+            try {
+                title.setText(handle(filmsToShow.get(position).getTitle())); // запись всех параметров
+                year.setText("Year: " + handle(filmsToShow.get(position).getYear()));
+                type.setText("Type: " + handle(filmsToShow.get(position).getType())+" "+freeSpace);
 
-            ImageView iconImageView = (ImageView) row.findViewById(R.id.poster);
+                iconImageView = (ImageView) row.findViewById(R.id.poster);
 
-            String posterUrl = filmsToShow.get(position).getPoster();
+                posterUrl = filmsToShow.get(position).getPoster();
+            } catch (Exception e){}
 
             try {
                 new DownloadImageTask(iconImageView).execute(posterUrl); // устанавливаем изображение
@@ -336,5 +298,18 @@ public class FilmsList extends Fragment {
             else return str;
 
         }
+    }
+
+    public boolean isOnline() {
+        try {
+            int timeoutMs = 1500;
+            Socket sock = new Socket();
+            SocketAddress sockaddr = new InetSocketAddress("8.8.8.8", 53);
+
+            sock.connect(sockaddr, timeoutMs);
+            sock.close();
+
+            return true;
+        } catch (IOException e) { return false; }
     }
 }

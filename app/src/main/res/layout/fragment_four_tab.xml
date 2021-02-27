@@ -13,6 +13,7 @@
         android:layout_height="wrap_content"
         android:clickable="true"
         android:src="@android:drawable/ic_input_add"
+        android:visibility="invisible"
         app:backgroundTint="#FF7904"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
