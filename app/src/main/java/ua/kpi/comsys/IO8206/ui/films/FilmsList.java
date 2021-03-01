@@ -36,7 +36,11 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
+import ua.kpi.comsys.IO8206.DB.App;
+import ua.kpi.comsys.IO8206.DB.AppDatabase;
+import ua.kpi.comsys.IO8206.DB.FilmEntities;
 import ua.kpi.comsys.IO8206.Film;
+import ua.kpi.comsys.IO8206.DB.FilmDao;
 import ua.kpi.comsys.IO8206.JsonHelperFilms;
 import ua.kpi.comsys.IO8206.R;
 import ua.kpi.comsys.IO8206.ui.FilmDetail;
@@ -55,6 +59,9 @@ public class FilmsList extends Fragment {
     Film removedElement=null;
     String API_KEY = "ed68b378";
     String REQUEST_FILM_NAME;
+    AppDatabase db = App.getInstance().getDatabase(); // обьект базы данных
+    FilmDao filmDao = db.filmDao(); // экземпляр с методами работы с БД
+    String searchRequest = "";
 
 
     @Override
@@ -65,14 +72,7 @@ public class FilmsList extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-//        adapter.notifyDataSetChanged();
     }
-
-//    @Override
-//    public void onDestroy() {
-//        super.onDestroy();
-//        Toast.makeText(getContext(), "Good luck :)", Toast.LENGTH_LONG).show();
-//    }
 
     @Override
     public void onPause() {
@@ -95,6 +95,7 @@ public class FilmsList extends Fragment {
         JsonHelperFilms jsonHelperFilms = new JsonHelperFilms();
         jsonHelperFilms.setFileUserName("searched_list.txt");
         films = jsonHelperFilms.importFilmListFromJSON(getContext());
+
 
         EditText searchRequest = root.findViewById(R.id.filmSearchField); // поле поиска
 
@@ -176,25 +177,35 @@ public class FilmsList extends Fragment {
         searchBtn.setOnClickListener(new View.OnClickListener() { // при нажатии на кнопку "поиск"
             public void onClick(View view) {
 
-                String fieldText = searchRequest.getText().toString().toLowerCase(); // получение текста из поля поиска
+                FilmsList.this.searchRequest = searchRequest.getText().toString().toLowerCase(); // получение текста из поля поиска
                 FilmAdapter adapter2;
                 if (films!=null)
                     films.clear();
 
-                if(!fieldText.equals("") & fieldText.length()>=3){ // если поле не пустое и больше трёх
+                if(!FilmsList.this.searchRequest.equals("") & FilmsList.this.searchRequest.length()>=3){ // если поле не пустое и больше трёх
                     searchMode = true;
 
                     try {
-                        REQUEST_FILM_NAME = fieldText;
+                        REQUEST_FILM_NAME = FilmsList.this.searchRequest;
                         filmsApiGet = false;
+                        REQUEST_FILM_NAME = REQUEST_FILM_NAME.replace(" ", "+");
 
-                        Ion.with(getContext()).load("http://www.omdbapi.com/?apikey="+API_KEY+"&s="+REQUEST_FILM_NAME+"&page=1").asString().setCallback(new FutureCallback<String>() {
+                        while (REQUEST_FILM_NAME.startsWith("+")) REQUEST_FILM_NAME = REQUEST_FILM_NAME.substring(1); // вырезаем пробелы(+) из начала строки
+                        while (REQUEST_FILM_NAME.endsWith("+")) REQUEST_FILM_NAME = REQUEST_FILM_NAME.substring(0, REQUEST_FILM_NAME.length()-2); // вырезаем пробелы(+) из конца строки
+
+                        String requestUrl = "http://www.omdbapi.com/?apikey="+API_KEY+"&s="+REQUEST_FILM_NAME+"&page=1";
+
+                        System.out.println("REQUEST: "+ REQUEST_FILM_NAME);
+
+                        Ion.with(getContext()).load(requestUrl).asString().setCallback(new FutureCallback<String>() {
                             @Override
                             public void onCompleted(Exception e, String result) {
                                 System.out.println(result);
                                 searchedFilms = jsonHelperFilms.importFilmListFromString(result);
 
                                 jsonHelperFilms.exportToJSON(getContext(), searchedFilms);
+
+                                 new SaveFilmsToDB("SaveFilms").start();
 
                                 FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
                                 try {
@@ -248,7 +259,6 @@ public class FilmsList extends Fragment {
                 InputStream in = new java.net.URL(urldisplay).openStream();
                 mIcon11 = BitmapFactory.decodeStream(in);
             } catch (Exception e) {
-//                Log.e("Error", e.getMessage());
                 e.printStackTrace();
             }
             return mIcon11;
@@ -287,9 +297,14 @@ public class FilmsList extends Fragment {
                 posterUrl = filmsToShow.get(position).getPoster();
             } catch (Exception e){}
 
-            try {
-                new DownloadImageTask(iconImageView).execute(posterUrl); // устанавливаем изображение
-            } catch (Exception e){}
+            if (posterUrl.startsWith("http")){
+                try {
+                    new DownloadImageTask(iconImageView).execute(posterUrl); // устанавливаем изображение
+                } catch (Exception e){}}
+            else if (iconImageView != null) {
+                iconImageView.setImageResource(R.drawable.ic_image_not_found); // если у обьекта нет постера
+            }
+
             return row;
         }
 
@@ -311,5 +326,43 @@ public class FilmsList extends Fragment {
 
             return true;
         } catch (IOException e) { return false; }
+    }
+
+    class SaveFilmsToDB extends Thread { // поток для сохранения фильмов в БД
+        SaveFilmsToDB(String name){
+            super(name);
+        }
+
+        public void run(){
+            if (filmDao.getByRequest(REQUEST_FILM_NAME).size()==0){
+                FilmEntities filmEntity;
+
+                System.out.println("Request '"+REQUEST_FILM_NAME+"' add to DB...");
+
+                for (Film currentFilm : searchedFilms){
+                    filmEntity = new FilmEntities();
+                    filmEntity.id = filmDao.getAll().size()+1;
+                    filmEntity.Title = currentFilm.getTitle();
+                    filmEntity.Year = currentFilm.getYear();
+                    filmEntity.Type = currentFilm.getType();
+                    filmEntity.Poster = currentFilm.getPoster();
+                    filmEntity.imdbID = currentFilm.getImdbID();
+                    filmEntity.SearchRequest = REQUEST_FILM_NAME;
+                    filmDao.insert(filmEntity);
+                }
+
+            }
+            else System.out.println("Request '"+searchRequest+"' already in DB :)");
+
+
+
+
+            getActivity().runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
+                @Override
+                public void run() {
+
+                }
+            });
+        }
     }
 }

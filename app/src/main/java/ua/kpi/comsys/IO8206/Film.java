@@ -1,7 +1,10 @@
 package ua.kpi.comsys.IO8206;
 
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
 public class Film {
-    private String Title, Year, Type, imdbID, Poster, Rated, Runtime, Genre, imdbRating, imdbVotes, Released, Production,
+    public String Title, Year, Type, imdbID, Poster, Rated, Runtime, Genre, imdbRating, imdbVotes, Released, Production,
             Language, Country, Awards, Director, Writer, Actors, Plot;
 
     public Film(String title, String year, String type, String imdbID, String poster, String rated, String production,

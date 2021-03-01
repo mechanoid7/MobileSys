@@ -68,7 +68,6 @@ public class JsonHelperFilms {
         FileOutputStream fileOutputStream = null;
 
         try {
-            System.out.println("FILENAME: "+FILE_USER_NAME);
             fileOutputStream = context.openFileOutput(FILE_USER_NAME, Context.MODE_PRIVATE);
             fileOutputStream.write(jsonString.getBytes());
             userFileEnable = true;
