@@ -62,6 +62,7 @@ public class FilmsList extends Fragment {
     AppDatabase db = App.getInstance().getDatabase(); // обьект базы данных
     FilmDao filmDao = db.filmDao(); // экземпляр с методами работы с БД
     String searchRequest = "";
+    JsonHelperFilms jsonHelperFilms;
 
 
     @Override
@@ -92,7 +93,7 @@ public class FilmsList extends Fragment {
                              ViewGroup container, Bundle savedInstanceState) {
 
         View root = inflater.inflate(R.layout.fragment_third_tab, container, false);
-        JsonHelperFilms jsonHelperFilms = new JsonHelperFilms();
+        jsonHelperFilms = new JsonHelperFilms();
         jsonHelperFilms.setFileUserName("searched_list.txt");
         films = jsonHelperFilms.importFilmListFromJSON(getContext());
 
@@ -193,27 +194,9 @@ public class FilmsList extends Fragment {
                         while (REQUEST_FILM_NAME.startsWith("+")) REQUEST_FILM_NAME = REQUEST_FILM_NAME.substring(1); // вырезаем пробелы(+) из начала строки
                         while (REQUEST_FILM_NAME.endsWith("+")) REQUEST_FILM_NAME = REQUEST_FILM_NAME.substring(0, REQUEST_FILM_NAME.length()-2); // вырезаем пробелы(+) из конца строки
 
-                        String requestUrl = "http://www.omdbapi.com/?apikey="+API_KEY+"&s="+REQUEST_FILM_NAME+"&page=1";
-
                         System.out.println("REQUEST: "+ REQUEST_FILM_NAME);
 
-                        Ion.with(getContext()).load(requestUrl).asString().setCallback(new FutureCallback<String>() {
-                            @Override
-                            public void onCompleted(Exception e, String result) {
-                                System.out.println(result);
-                                searchedFilms = jsonHelperFilms.importFilmListFromString(result);
-
-                                jsonHelperFilms.exportToJSON(getContext(), searchedFilms);
-
-                                 new SaveFilmsToDB("SaveFilms").start();
-
-                                FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
-                                try {
-                                    listView.setAdapter(adapter3);
-                                } catch (Exception e2){}
-                                filmsApiGet = true;
-                            }
-                        });
+                        new SearchHandler("handle").start();
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -337,8 +320,6 @@ public class FilmsList extends Fragment {
             if (filmDao.getByRequest(REQUEST_FILM_NAME).size()==0){
                 FilmEntities filmEntity;
 
-                System.out.println("Request '"+REQUEST_FILM_NAME+"' add to DB...");
-
                 for (Film currentFilm : searchedFilms){
                     filmEntity = new FilmEntities();
                     filmEntity.id = filmDao.getAll().size()+1;
@@ -354,8 +335,52 @@ public class FilmsList extends Fragment {
             }
             else System.out.println("Request '"+searchRequest+"' already in DB :)");
 
+            getActivity().runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
+                @Override
+                public void run() {
 
+                }
+            });
+        }
+    }
 
+    class SearchHandler extends Thread { // обработчик поиска
+        SearchHandler(String name){
+            super(name);
+        }
+
+        public void run(){
+            List<FilmEntities> entityByRequest = filmDao.getByRequest(REQUEST_FILM_NAME);
+            String requestUrl = "http://www.omdbapi.com/?apikey="+API_KEY+"&s="+REQUEST_FILM_NAME+"&page=1";
+
+            if(entityByRequest.size()>0){
+                System.out.println("LIST: GET FROM DB");
+                searchedFilms = Film.listFilmEntitiesToListFilms(entityByRequest); // entityByRequest в List<Film>
+                FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
+                try {
+                    listView.setAdapter(adapter3);
+                } catch (Exception e2){}
+                filmsApiGet = true;
+            }
+            else {
+                Ion.with(getContext()).load(requestUrl).asString().setCallback(new FutureCallback<String>() {
+                    @Override
+                    public void onCompleted(Exception e, String result) {
+                        System.out.println(result);
+                        searchedFilms = jsonHelperFilms.importFilmListFromString(result);
+
+                        jsonHelperFilms.exportToJSON(getContext(), searchedFilms);
+
+                        new SaveFilmsToDB("SaveFilms").start();
+
+                        FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
+                        try {
+                            listView.setAdapter(adapter3);
+                        } catch (Exception e2) {}
+                        filmsApiGet = true;
+                    }
+                });
+            }
 
             getActivity().runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
                 @Override

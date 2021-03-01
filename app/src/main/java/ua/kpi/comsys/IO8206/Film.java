@@ -3,6 +3,11 @@ package ua.kpi.comsys.IO8206;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import ua.kpi.comsys.IO8206.DB.FilmEntities;
+
 public class Film {
     public String Title, Year, Type, imdbID, Poster, Rated, Runtime, Genre, imdbRating, imdbVotes, Released, Production,
             Language, Country, Awards, Director, Writer, Actors, Plot;
@@ -181,6 +186,17 @@ public class Film {
 
     public void setPlot(String plot) {
         Plot = plot;
+    }
+
+    public static List<Film> listFilmEntitiesToListFilms(List<FilmEntities> filmEntities){ // конвертация List<FilmEntities> в List<Film>
+        List<Film> result = new ArrayList();
+        Film film;
+
+        for (FilmEntities entity : filmEntities){
+            film = new Film(entity.getTitle(), entity.getTitle(), entity.getType(), entity.getImdbID(), entity.getPoster(), null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            result.add(film);
+        }
+        return result;
     }
 
     @Override

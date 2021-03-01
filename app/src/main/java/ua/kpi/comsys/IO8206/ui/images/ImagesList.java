@@ -253,8 +253,6 @@ public class ImagesList extends Fragment {
                     }
                 }
 
-                System.out.println("IMAGES URL: "+images);
-
                 in.close();
 
                 listView = root.findViewById(R.id.imagesList); // получить лисьВью
