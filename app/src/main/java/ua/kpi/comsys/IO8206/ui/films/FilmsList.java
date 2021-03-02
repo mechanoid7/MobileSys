@@ -9,7 +9,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,7 +36,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URL;
@@ -271,8 +269,6 @@ public class FilmsList extends Fragment {
         FilmAdapter(Context context, int textViewResourceId, List<Film> objects) {
             super(context, textViewResourceId, objects);
             filmsToShow = objects; // список найденых фильмов
-            System.out.println(">>>>>CALL ADAPTER");
-
         }
 
         @NonNull
@@ -296,52 +292,16 @@ public class FilmsList extends Fragment {
                 ImageHandler handler = new ImageHandler(iconImageView, getActivity(), posterUrl, position, getContext());
                 Thread thread = new Thread(handler);
                 thread.start();
-//                thread.join();
-
-                System.out.println(">>>CHECK handler IN");
             } catch (Exception e){
                 e.printStackTrace();
             }
 
-
-
-//            Runnable task = () -> {
-//
-//
-//
-//
-//
-//            };
-
-//            new Thread(task).start();
             return row;
-
-
-//            ImageEntities currentImage = new ImageEntities();
-//            String fileName = "";
-//
-//            fileName += "poster_" + imageDao.getDataCount() + "_"+ random.nextInt(9999);
-//            currentImage.url = posterUrl;
-//            currentImage.fileName = fileName;
-//            ss
-//
-//            imageDao.insert(currentImage);
-//
-//
-//            if (posterUrl.startsWith("http")){
-//                try {
-//                    new DownloadImageTask(iconImageView).execute(posterUrl); // устанавливаем изображение
-//                } catch (Exception e){}}
-//            else if (iconImageView != null) {
-//                iconImageView.setImageResource(R.drawable.ic_image_not_found); // если у обьекта нет постера
-//            }
-
         }
 
         public String handle(String str){ // обработчик строки
             if(str.equals("")) return "None"; // если не задан любой из параметров
             else return str;
-
         }
     }
 
@@ -533,35 +493,43 @@ public class FilmsList extends Fragment {
         }
 
         public void run() {
-            System.out.println("ENTER IN HANDLER");
             ImageEntities currentImage = new ImageEntities();
-
             System.out.println("Pos:"+position+"; URL:"+posterUrl);
-
-            String fileName = "";
-
+            String fileName;
 
             if (posterUrl.startsWith("http")) { // если URL начинается с http
-                int rndInt = new Random().nextInt(9999);
-                fileName += "poster_" + position+ "_" + rndInt+".png";
-
                 List<ImageEntities> daoByUrl = imageDao.getByUrl(posterUrl);
+                String cacheDir = context.getCacheDir() + "";
 
-                Boolean imageExist = false;
+                boolean imageExist = false;
                 if (daoByUrl.size() != 0) { // файл есть в БД, проверяем наличие в Кеше
-                    String imageCachePath = context.getCacheDir() + "/" + daoByUrl.get(0).getFileName();
-                    imageExist = new File(imageCachePath).exists();
-//                    imageExist = f.exists();
+                    String imageCachePath = cacheDir + "/" + daoByUrl.get(0).getFileName();
+                    imageExist = new File(imageCachePath).exists(); // bool есть в кеше
+                    System.out.println("FILE:"+daoByUrl.get(0).getFileName()+"; Exist:"+imageExist);
                 }
 
                 if (daoByUrl.size() == 0 | !imageExist) { // если нет изображений с таким url
                     // или отсутствует файл изображения на устройстве, но есть в БД
+                    if (!imageExist & daoByUrl.size()>0) // если изображение есть в БД, но нет в кеше - установка имени из БД
+                        fileName = daoByUrl.get(0).getFileName();
+                    else { // изображения нет в бд - генерация нового имени
+                        int rndInt = new Random().nextInt(9999);
+                        fileName = "poster_" + position+ "_" + rndInt+".png";
+//                        String imageCachePath = cacheDir + "/" + fileName;
+                        while (true){ // установка уникального имени,
+                            // ежели сгенерировано которое уже сущестует
+                            if (!(new File(cacheDir + "/" + fileName).exists())) break;
+                            System.out.println("WHILE lifecycle(");
+                            fileName = "poster_" + position+ "_" + new Random().nextInt(9999)+".png";
+                        }
+                    }
+
                     URL urlDownload;
                     try {
                         urlDownload = new URL(posterUrl);
                         InputStream input = urlDownload.openStream();
                         try {
-                            OutputStream output = new FileOutputStream(context.getCacheDir() + "/" + fileName);
+                            OutputStream output = new FileOutputStream(cacheDir + "/" + fileName);
                             try {
                                 byte[] buffer = new byte[2048];
                                 int bytesRead = 0;
