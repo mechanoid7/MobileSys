@@ -11,13 +11,13 @@ import java.util.List;
 @Dao
 public interface FilmDao {
 
-    @Query("SELECT * FROM FilmEntities")
+    @Query("SELECT * FROM film")
     List<FilmEntities> getAll();
 
-    @Query("SELECT * FROM FilmEntities WHERE SearchRequest = :searchRequest")
+    @Query("SELECT * FROM film WHERE SearchRequest = :searchRequest")
     List<FilmEntities> getByRequest(String searchRequest);
 
-    @Query("SELECT * FROM FilmEntities WHERE id = :id")
+    @Query("SELECT * FROM film WHERE id = :id")
     FilmEntities getById(long id);
 
     @Insert

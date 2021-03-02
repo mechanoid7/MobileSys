@@ -13,7 +13,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         instance = this;
-        database = Room.databaseBuilder(this, AppDatabase.class, "films_request").build();
+        database = Room.databaseBuilder(this, AppDatabase.class, "main_DB").build();
     }
 
     public static App getInstance() {

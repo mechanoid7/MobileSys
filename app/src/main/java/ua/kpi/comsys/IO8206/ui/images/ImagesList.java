@@ -27,6 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import ua.kpi.comsys.IO8206.DB.App;
+import ua.kpi.comsys.IO8206.DB.AppDatabase;
+import ua.kpi.comsys.IO8206.DB.ImageDao;
 import ua.kpi.comsys.IO8206.R;
 
 public class ImagesList extends Fragment {
@@ -46,6 +49,9 @@ public class ImagesList extends Fragment {
 //    String imageUrlTarget="\"largeImageURL\":\""; // large img, long time load
 //    String imageUrlTarget="\"webformatURL\":\""; // middle img, short time load
     String imageUrlTarget="\"previewURL\":\""; // small img, fast load
+    AppDatabase db = App.getInstance().getDatabase(); // обьект базы данных
+    ImageDao imageDao = db.imageDao(); // экземпляр с методами работы с БД
+
 
 
     @Override

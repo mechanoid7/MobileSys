@@ -3,12 +3,12 @@ package ua.kpi.comsys.IO8206.DB;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-@Entity
+@Entity(tableName = "film")
 public class FilmEntities {
     public String Title, Year, Type, imdbID, Poster, SearchRequest, Rated, Runtime, Genre, imdbRating, imdbVotes, Released, Production,
             Language, Country, Awards, Director, Writer, Actors, Plot;
 
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
     public int id;
 
 //    public FilmEntity(String title, String year, String type, String imdbID, String poster, String rated, String production,

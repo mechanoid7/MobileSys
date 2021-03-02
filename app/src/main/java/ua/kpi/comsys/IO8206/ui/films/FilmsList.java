@@ -1,5 +1,6 @@
 package ua.kpi.comsys.IO8206.ui.films;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -8,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,17 +30,26 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.koushikdutta.async.future.FutureCallback;
 import com.koushikdutta.ion.Ion;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import ua.kpi.comsys.IO8206.DB.App;
 import ua.kpi.comsys.IO8206.DB.AppDatabase;
 import ua.kpi.comsys.IO8206.DB.FilmEntities;
+import ua.kpi.comsys.IO8206.DB.ImageDao;
+import ua.kpi.comsys.IO8206.DB.ImageEntities;
 import ua.kpi.comsys.IO8206.Film;
 import ua.kpi.comsys.IO8206.DB.FilmDao;
 import ua.kpi.comsys.IO8206.JsonHelperFilms;
@@ -59,10 +70,13 @@ public class FilmsList extends Fragment {
     Film removedElement=null;
     String API_KEY = "ed68b378";
     String REQUEST_FILM_NAME;
-    AppDatabase db = App.getInstance().getDatabase(); // обьект базы данных
+    static AppDatabase db = App.getInstance().getDatabase(); // обьект базы данных
     FilmDao filmDao = db.filmDao(); // экземпляр с методами работы с БД
+    static ImageDao imageDao = db.imageDao(); // экземпляр с методами работы с БД
     String searchRequest = "";
     JsonHelperFilms jsonHelperFilms;
+    Random random;
+    String posterUrl = "";
 
 
     @Override
@@ -107,6 +121,7 @@ public class FilmsList extends Fragment {
 
         if(films != null){
             adapter = new FilmAdapter(getActivity(), R.layout.films_list, films);
+//            new Thread(task).start();
 
             listView.setAdapter(adapter);
             Toast.makeText(getContext(), "Loaded", Toast.LENGTH_LONG).show();
@@ -179,7 +194,7 @@ public class FilmsList extends Fragment {
             public void onClick(View view) {
 
                 FilmsList.this.searchRequest = searchRequest.getText().toString().toLowerCase(); // получение текста из поля поиска
-                FilmAdapter adapter2;
+//                FilmAdapter adapter2;
                 if (films!=null)
                     films.clear();
 
@@ -200,13 +215,13 @@ public class FilmsList extends Fragment {
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, new ArrayList<>()); // пустой адаптер
+//                        adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, new ArrayList<>()); // пустой адаптер
                     }
                 }
                 else {
                     Toast.makeText(getContext(), "Uncorrected request", Toast.LENGTH_LONG).show();
                     searchMode = false;
-                    adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, films); // адаптер с стандартным списком
+//                    adapter2 = new FilmAdapter(getActivity(), R.layout.films_list, films); // адаптер с стандартным списком
                 };
 
             }
@@ -256,6 +271,8 @@ public class FilmsList extends Fragment {
         FilmAdapter(Context context, int textViewResourceId, List<Film> objects) {
             super(context, textViewResourceId, objects);
             filmsToShow = objects; // список найденых фильмов
+            System.out.println(">>>>>CALL ADAPTER");
+
         }
 
         @NonNull
@@ -263,32 +280,62 @@ public class FilmsList extends Fragment {
         public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) { // переопределение
             LayoutInflater inflater = getLayoutInflater();
             View row = inflater.inflate(R.layout.films_list, parent, false);
-
             TextView title = (TextView) row.findViewById(R.id.filmTitle); // связь данных и ИД слоя
             TextView year = (TextView) row.findViewById(R.id.filmReleasedDetail);
             TextView type = (TextView) row.findViewById(R.id.filmType);
+            
+            title.setText(handle(filmsToShow.get(position).getTitle())); // установка параметров
+            year.setText("Year: " + handle(filmsToShow.get(position).getYear()));
+            type.setText("Type: " + handle(filmsToShow.get(position).getType())+" "+freeSpace);
 
-            ImageView iconImageView = null;
-            String posterUrl = "";
+
             try {
-                title.setText(handle(filmsToShow.get(position).getTitle())); // запись всех параметров
-                year.setText("Year: " + handle(filmsToShow.get(position).getYear()));
-                type.setText("Type: " + handle(filmsToShow.get(position).getType())+" "+freeSpace);
+                ImageView iconImageView = (ImageView) row.findViewById(R.id.poster);
+                posterUrl = filmsToShow.get(position).getPoster(); // адрес изображения
 
-                iconImageView = (ImageView) row.findViewById(R.id.poster);
+                ImageHandler handler = new ImageHandler(iconImageView, getActivity(), posterUrl, position, getContext());
+                Thread thread = new Thread(handler);
+                thread.start();
+//                thread.join();
 
-                posterUrl = filmsToShow.get(position).getPoster();
-            } catch (Exception e){}
-
-            if (posterUrl.startsWith("http")){
-                try {
-                    new DownloadImageTask(iconImageView).execute(posterUrl); // устанавливаем изображение
-                } catch (Exception e){}}
-            else if (iconImageView != null) {
-                iconImageView.setImageResource(R.drawable.ic_image_not_found); // если у обьекта нет постера
+                System.out.println(">>>CHECK handler IN");
+            } catch (Exception e){
+                e.printStackTrace();
             }
 
+
+
+//            Runnable task = () -> {
+//
+//
+//
+//
+//
+//            };
+
+//            new Thread(task).start();
             return row;
+
+
+//            ImageEntities currentImage = new ImageEntities();
+//            String fileName = "";
+//
+//            fileName += "poster_" + imageDao.getDataCount() + "_"+ random.nextInt(9999);
+//            currentImage.url = posterUrl;
+//            currentImage.fileName = fileName;
+//            ss
+//
+//            imageDao.insert(currentImage);
+//
+//
+//            if (posterUrl.startsWith("http")){
+//                try {
+//                    new DownloadImageTask(iconImageView).execute(posterUrl); // устанавливаем изображение
+//                } catch (Exception e){}}
+//            else if (iconImageView != null) {
+//                iconImageView.setImageResource(R.drawable.ic_image_not_found); // если у обьекта нет постера
+//            }
+
         }
 
         public String handle(String str){ // обработчик строки
@@ -319,19 +366,17 @@ public class FilmsList extends Fragment {
         public void run(){
             if (filmDao.getByRequest(REQUEST_FILM_NAME).size()==0){
                 FilmEntities filmEntity;
-
-                for (Film currentFilm : searchedFilms){
-                    filmEntity = new FilmEntities();
-                    filmEntity.id = filmDao.getAll().size()+1;
-                    filmEntity.Title = currentFilm.getTitle();
-                    filmEntity.Year = currentFilm.getYear();
-                    filmEntity.Type = currentFilm.getType();
-                    filmEntity.Poster = currentFilm.getPoster();
-                    filmEntity.imdbID = currentFilm.getImdbID();
-                    filmEntity.SearchRequest = REQUEST_FILM_NAME;
-                    filmDao.insert(filmEntity);
-                }
-
+                if (searchedFilms!=null)
+                    for (Film currentFilm : searchedFilms){
+                        filmEntity = new FilmEntities();
+                        filmEntity.Title = currentFilm.getTitle();
+                        filmEntity.Year = currentFilm.getYear();
+                        filmEntity.Type = currentFilm.getType();
+                        filmEntity.Poster = currentFilm.getPoster();
+                        filmEntity.imdbID = currentFilm.getImdbID();
+                        filmEntity.SearchRequest = REQUEST_FILM_NAME;
+                        filmDao.insert(filmEntity);
+                    }
             }
             else System.out.println("Request '"+searchRequest+"' already in DB :)");
 
@@ -356,9 +401,11 @@ public class FilmsList extends Fragment {
             if(entityByRequest.size()>0){
                 System.out.println("LIST: GET FROM DB");
                 searchedFilms = Film.listFilmEntitiesToListFilms(entityByRequest); // entityByRequest в List<Film>
+                jsonHelperFilms.exportToJSON(getContext(), searchedFilms);
                 FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
                 try {
                     listView.setAdapter(adapter3);
+//                    adapter3.notifyDataSetChanged();
                 } catch (Exception e2){}
                 filmsApiGet = true;
             }
@@ -385,9 +432,185 @@ public class FilmsList extends Fragment {
             getActivity().runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
                 @Override
                 public void run() {
-
                 }
             });
+        }
+    }
+
+//    class ImageHandler extends Thread { // обработчик изображений
+//        ImageHandler(String name){
+//            super(name);
+//        }
+//
+//        public void run(){
+//            ImageEntities currentImage = new ImageEntities();
+//            String fileName = "";
+//
+//            System.out.println("URL:"+posterUrl);
+//
+//            fileName += "poster_" + imageDao.getDataCount() + "_"+ random.nextInt(9999);
+//
+//            if (posterUrl.startsWith("http")) { // если URL начинается с http
+//                Boolean imageExist = false;
+//                if (imageDao.getByUrl(posterUrl).size() != 0){ // файл есть в БД, проверяем наличие в Кеше
+//                    String imageCachePath = getContext().getCacheDir() + "/" + imageDao.getByUrl(posterUrl).get(0).getFileName();
+//                    File f = new File(imageCachePath);
+//                    imageExist = f.exists();
+//                }
+//
+//                if (imageDao.getByUrl(posterUrl).size() == 0 | !imageExist) { // если нет изображений с таким url
+//                    // или отсутствует файл изображения на устройстве, но есть в БД
+//                    URL urlDownload;
+//                    try {
+//                        urlDownload = new URL(posterUrl);
+//                        InputStream input = urlDownload.openStream();
+//                        try {
+//                            OutputStream output = new FileOutputStream(getContext().getCacheDir() + "/" + fileName);
+//                            try {
+//                                byte[] buffer = new byte[2048];
+//                                int bytesRead = 0;
+//                                while ((bytesRead = input.read(buffer, 0, buffer.length)) >= 0) {
+//                                    output.write(buffer, 0, bytesRead);
+//                                }
+//                            } finally {
+//                                output.close();
+//                            }
+//                        } finally {
+//                            input.close();
+//                        }
+//                    } catch (Exception e) { e.printStackTrace();
+//                    }
+//
+//                    currentImage.url = posterUrl;
+//                    currentImage.fileName = fileName;
+//                    imageDao.insert(currentImage);
+//                }
+//
+//                try { // пробуем установить кешированое изображение
+//                    String imageNameDB = imageDao.getByUrl(posterUrl).get(0).getFileName();
+//
+//                    File imageFile = new File(getContext().getCacheDir() + "/" + imageNameDB); // кешированое изображение
+//                    InputStream is = new FileInputStream(imageFile);
+//
+//                    Bitmap userImage = BitmapFactory.decodeStream(is); // фото в стрим
+//                    iconImageView.setImageBitmap(userImage); // установка фото
+//                } catch (Exception e) {e.printStackTrace();} // стандартная картинка
+//
+//            }
+//            else if (iconImageView != null) { // если адресс постера начинается не с http
+//                iconImageView.setImageResource(R.drawable.ic_image_not_found); // установка изображения("Отсутствует")
+//            }
+//
+////            if (posterUrl.startsWith("http")){
+////                try {
+////                    new DownloadImageTask(iconImageView).execute(posterUrl); // устанавливаем изображение
+////                } catch (Exception e){}}
+////            else if (iconImageView != null) {
+////                iconImageView.setImageResource(R.drawable.ic_image_not_found); // если у обьекта нет постера
+////            }
+//
+//            getActivity().runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
+//                @Override
+//                public void run() {
+//                }
+//            });
+//        }
+//    }
+
+    public static class ImageHandler implements Runnable {
+        protected ImageView imageView;
+        protected Activity uiActivity;
+        protected String posterUrl;
+        protected Context context;
+        protected int position;
+
+        public ImageHandler(ImageView imageView, Activity uiActivity, String posterUrl, int position, Context context) {
+            this.imageView = imageView;
+            this.uiActivity = uiActivity;
+            this.posterUrl = posterUrl;
+            this.position = position;
+            this.context = context;
+        }
+
+        public void run() {
+            System.out.println("ENTER IN HANDLER");
+            ImageEntities currentImage = new ImageEntities();
+
+            System.out.println("Pos:"+position+"; URL:"+posterUrl);
+
+            String fileName = "";
+
+
+            if (posterUrl.startsWith("http")) { // если URL начинается с http
+                int rndInt = new Random().nextInt(9999);
+                fileName += "poster_" + position+ "_" + rndInt+".png";
+
+                List<ImageEntities> daoByUrl = imageDao.getByUrl(posterUrl);
+
+                Boolean imageExist = false;
+                if (daoByUrl.size() != 0) { // файл есть в БД, проверяем наличие в Кеше
+                    String imageCachePath = context.getCacheDir() + "/" + daoByUrl.get(0).getFileName();
+                    imageExist = new File(imageCachePath).exists();
+//                    imageExist = f.exists();
+                }
+
+                if (daoByUrl.size() == 0 | !imageExist) { // если нет изображений с таким url
+                    // или отсутствует файл изображения на устройстве, но есть в БД
+                    URL urlDownload;
+                    try {
+                        urlDownload = new URL(posterUrl);
+                        InputStream input = urlDownload.openStream();
+                        try {
+                            OutputStream output = new FileOutputStream(context.getCacheDir() + "/" + fileName);
+                            try {
+                                byte[] buffer = new byte[2048];
+                                int bytesRead = 0;
+                                while ((bytesRead = input.read(buffer, 0, buffer.length)) >= 0) {
+                                    output.write(buffer, 0, bytesRead);
+                                }
+                            } finally {
+                                output.close();
+                            }
+                        } finally {
+                            input.close();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    currentImage.url = posterUrl;
+                    currentImage.fileName = fileName;
+                    imageDao.insert(currentImage);
+                }
+
+                try { // пробуем установить кешированое изображение
+                    String imageNameDB = imageDao.getByUrl(posterUrl).get(0).getFileName();
+
+                    File imageFile = new File(context.getCacheDir() + "/" + imageNameDB); // кешированое изображение
+                    InputStream is = new FileInputStream(imageFile);
+
+                    Bitmap userImage = BitmapFactory.decodeStream(is); // фото в стрим
+
+                    uiActivity.runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
+                        @Override
+                        public void run() {
+                            imageView.setImageBitmap(userImage); // установка фото
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } // стандартная картинка
+
+            } else if (imageView != null) { // если адресс постера начинается не с http
+                uiActivity.runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
+                    @Override
+                    public void run() {
+                        imageView.setImageResource(R.drawable.ic_image_not_found); // установка изображения("Отсутствует")
+                    }
+                });
+            }
+
+
         }
     }
 }
