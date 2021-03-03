@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Resources;
 
 import com.google.gson.Gson;
+import com.google.gson.internal.bind.util.ISO8601Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -147,6 +148,7 @@ public class JsonHelperFilms {
             return dataItems.getSearch();
         }
         catch (Exception ex){
+            System.out.println(">>Warning, null obj, return null");
             ex.printStackTrace();
         }
         finally {

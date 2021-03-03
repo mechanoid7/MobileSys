@@ -1,9 +1,9 @@
 package ua.kpi.comsys.IO8206.ui.images;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,8 +20,12 @@ import androidx.fragment.app.Fragment;
 
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,13 +34,15 @@ import java.util.Random;
 import ua.kpi.comsys.IO8206.DB.App;
 import ua.kpi.comsys.IO8206.DB.AppDatabase;
 import ua.kpi.comsys.IO8206.DB.ImageDao;
+import ua.kpi.comsys.IO8206.DB.ImageEntities;
+//import ua.kpi.comsys.IO8206.DB.PosterEntities;
 import ua.kpi.comsys.IO8206.R;
 
 public class ImagesList extends Fragment {
     private List<List<String>>  imagesToShow = new ArrayList<>();
     private ImageAdapter adapter;
     ListView listView;
-    List<List<String>> images = new ArrayList<>(); // список фото разбитых в группы по 9 штук
+    List<List<String>> images = new ArrayList<>(); // список ссылок на фото разбитых в группы по 9 штук
     private final int Pick_image = 1;
     Random random = new Random();
 //    FloatingActionButton addImageBtn;
@@ -49,8 +55,8 @@ public class ImagesList extends Fragment {
 //    String imageUrlTarget="\"largeImageURL\":\""; // large img, long time load
 //    String imageUrlTarget="\"webformatURL\":\""; // middle img, short time load
     String imageUrlTarget="\"previewURL\":\""; // small img, fast load
-    AppDatabase db = App.getInstance().getDatabase(); // обьект базы данных
-    ImageDao imageDao = db.imageDao(); // экземпляр с методами работы с БД
+    static AppDatabase db = App.getInstance().getDatabase(); // обьект базы данных
+    static ImageDao imageDao = db.imageDao(); // экземпляр с методами работы с БД
 
 
 
@@ -130,6 +136,7 @@ public class ImagesList extends Fragment {
             ImageView image9 = row.findViewById(R.id.imageListItem9);
 
             List<ImageView> imageViews = new ArrayList<>(); // список объектов
+
             imageViews.add(image1);
             imageViews.add(image2);
             imageViews.add(image3);
@@ -143,8 +150,12 @@ public class ImagesList extends Fragment {
             int photosNum = imagesToShow.get(position).size();
             for (int i=0; i<9; i++){
                 try {
-                    if (i<photosNum)
-                        new DownloadImageTask(imageViews.get(i)).execute(imagesToShow.get(position).get(i)); // установить изображение из ссылки
+                    if (i<photosNum){
+//                        new DownloadImageTask(imageViews.get(i)).execute(imagesToShow.get(position).get(i)); // установить изображение из ссылки
+                        ImageHandlerImg handler = new ImageHandlerImg(imageViews.get(i), getActivity(), images.get(position).get(i), position, getContext());
+                        Thread thread = new Thread(handler);
+                        thread.start();
+                    }
                     else imageViews.get(i).setImageResource(R.drawable.white_background); // если кол-во элементов не кратно 9 - заполнить белым
                 } catch (Exception e){}
             }
@@ -157,62 +168,6 @@ public class ImagesList extends Fragment {
             else return str;
         }
     }
-
-
-//    @Override
-//    public void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) { // загрузка пользовательского фото
-//        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
-//
-//        if (requestCode == Pick_image & imageReturnedIntent!=null) {
-//            if (resultCode == RESULT_OK) {
-//                try {
-//                    final Uri imageUri = imageReturnedIntent.getData(); // получить URI изображения
-//                    final InputStream imageStream = getContext().getContentResolver().openInputStream(imageUri); // получить стрим
-//                    Bitmap selectedImage1 = BitmapFactory.decodeStream(imageStream); // преобразовать в битмап
-//
-//                    String newImageName = "image_"+(random.nextInt(99999)+100) + ".png";
-//
-//                    if (images != null){ //если список изображений не null
-//                        if (images.size()==0){ // если список только инициализирован и пустой
-//                            List<String> tempImageList = new ArrayList<>();
-//                            images.add(tempImageList);
-//                        }
-//                        if (images.get(images.size()-1).size()>=9){ // если в последнем элементе списка не меньше девяти элементов
-//                            List<String> tempImageList = new ArrayList<>();
-//                            tempImageList.add(newImageName);
-//                            images.add(tempImageList);
-//                        }
-//                        else { // если меньше девяти элементов
-//                            images.get(images.size()-1).add(newImageName);
-//                        }
-//                    }
-//
-//                    ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
-//                    selectedImage1.compress(Bitmap.CompressFormat.JPEG, 80, bos2);
-//                    byte[] bitmapdata = bos2.toByteArray();
-//                    File imageFile = new File(getContext().getFilesDir(), newImageName);
-//
-//                    try {
-//                        FileOutputStream fos = new FileOutputStream(imageFile);
-//                        fos.write(bitmapdata);
-//                        fos.flush();
-//                        fos.close();
-//                        requireActivity().recreate(); // обновить ЛистВью, если загрузка успешна
-//
-//                    } catch (FileNotFoundException e) {
-//                        e.printStackTrace();
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//
-//                    jsonHelperImages.exportToJSON(getContext(), images);
-//
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//    }
 
     class LoadImage extends Thread {
         LoadImage(String name){
@@ -282,27 +237,130 @@ public class ImagesList extends Fragment {
         }
     }
 
-    static class DownloadImageTask extends AsyncTask<String, Void, Bitmap> { // получить изображение из ссылки
-        ImageView bmImage;
+//    static class DownloadImageTask extends AsyncTask<String, Void, Bitmap> { // получить изображение из ссылки
+//        ImageView bmImage;
+//
+//        public DownloadImageTask(ImageView bmImage) {
+//            this.bmImage = bmImage;
+//        }
+//
+//        protected Bitmap doInBackground(String... urls) {
+//            String urldisplay = urls[0];
+//            Bitmap mIcon11 = null;
+//            try {
+//                InputStream in = new java.net.URL(urldisplay).openStream();
+//                mIcon11 = BitmapFactory.decodeStream(in);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//            return mIcon11;
+//        }
+//
+//        protected void onPostExecute(Bitmap result) {
+//            bmImage.setImageBitmap(result);
+//        }
+//    }
 
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
+
+    public static class ImageHandlerImg implements Runnable {
+        protected ImageView imageView;
+        protected Activity uiActivity;
+        protected String imageUrl;
+        protected Context context;
+        protected int position;
+
+        public ImageHandlerImg(ImageView imageView, Activity uiActivity, String imageUrl, int position, Context context) {
+            this.imageView = imageView;
+            this.uiActivity = uiActivity;
+            this.imageUrl = imageUrl;
+            this.position = position;
+            this.context = context;
         }
 
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                e.printStackTrace();
+        public void run() {
+            ImageEntities currentImage = new ImageEntities();
+            System.out.println("Pos:"+position+"; URL:"+ imageUrl);
+            String fileName;
+
+            if (imageUrl.startsWith("http")) { // если URL начинается с http
+                List<ImageEntities> daoByUrl = imageDao.getByUrl(imageUrl);
+                String cacheDir = context.getCacheDir() + "";
+
+                boolean imageExist = false;
+                if (daoByUrl.size() != 0) { // файл есть в БД, проверяем наличие в Кеше
+                    String imageCachePath = cacheDir + "/" + daoByUrl.get(0).getFileName();
+                    imageExist = new File(imageCachePath).exists(); // bool есть в кеше
+                    System.out.println("FILE:"+daoByUrl.get(0).getFileName()+"; Exist:"+imageExist);
+                }
+
+                if (daoByUrl.size() == 0 | !imageExist) { // если нет изображений с таким url
+                    // или отсутствует файл изображения на устройстве, но есть в БД
+                    if (!imageExist & daoByUrl.size()>0) // если изображение есть в БД, но нет в кеше - установка имени из БД
+                        fileName = daoByUrl.get(0).getFileName();
+                    else { // изображения нет в бд - генерация нового имени
+                        int rndInt = new Random().nextInt(9999);
+                        fileName = "image_" + position+ "_" + rndInt+".png";
+                        while (true){ // установка уникального имени,
+                            // ежели сгенерировано которое уже сущестует
+                            if (!(new File(cacheDir + "/" + fileName).exists())) break;
+                            System.out.println("WHILE lifecycle(");
+                            fileName = "image_" + position+ "_" + new Random().nextInt(9999)+".png";
+                        }
+                    }
+
+                    URL urlDownload;
+                    try {
+                        urlDownload = new URL(imageUrl);
+                        InputStream input = urlDownload.openStream();
+                        try {
+                            OutputStream output = new FileOutputStream(cacheDir + "/" + fileName);
+                            try {
+                                byte[] buffer = new byte[2048];
+                                int bytesRead = 0;
+                                while ((bytesRead = input.read(buffer, 0, buffer.length)) >= 0) {
+                                    output.write(buffer, 0, bytesRead);
+                                }
+                            } finally {
+                                output.close();
+                            }
+                        } finally {
+                            input.close();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    currentImage.url = imageUrl;
+                    currentImage.fileName = fileName;
+                    imageDao.insert(currentImage);
+                }
+
+                try { // пробуем установить кешированое изображение
+                    String imageNameDB = imageDao.getByUrl(imageUrl).get(0).getFileName();
+
+                    File imageFile = new File(context.getCacheDir() + "/" + imageNameDB); // кешированое изображение
+                    InputStream is = new FileInputStream(imageFile);
+
+                    Bitmap userImage = BitmapFactory.decodeStream(is); // фото в стрим
+
+                    uiActivity.runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
+                        @Override
+                        public void run() {
+                            imageView.setImageBitmap(userImage); // установка фото
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } // стандартная картинка
+
+            } else if (imageView != null) { // если адресс постера начинается не с http
+                uiActivity.runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
+                    @Override
+                    public void run() {
+                        imageView.setImageResource(R.drawable.ic_image_not_found); // установка изображения("Отсутствует")
+                    }
+                });
             }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
         }
     }
 
