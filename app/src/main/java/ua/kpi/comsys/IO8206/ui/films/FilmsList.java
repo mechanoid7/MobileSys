@@ -17,6 +17,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,10 +36,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -252,43 +255,32 @@ public class FilmsList extends Fragment {
     private class FilmAdapter extends ArrayAdapter<Film>{ // свой адаптер
         FilmAdapter(Context context, int textViewResourceId, List<Film> objects) {
             super(context, textViewResourceId, objects);
-            System.out.println("GET VIEW INIT 1");
-
             filmsToShow = objects; // список найденых фильмов
-
-            System.out.println("GET VIEW INIT 2");
-
-
         }
 
         @Override
         public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) { // переопределение
-            System.out.println("GET VIEW 0");
 
             LayoutInflater inflater = getLayoutInflater();
-            System.out.println("GET VIEW 1");
             View row = inflater.inflate(R.layout.films_list, parent, false);
             TextView title = (TextView) row.findViewById(R.id.filmTitle); // связь данных и ИД слоя
             TextView year = (TextView) row.findViewById(R.id.filmReleasedDetail);
             TextView type = (TextView) row.findViewById(R.id.filmType);
-            System.out.println("GET VIEW 2");
 
             title.setText(handle(filmsToShow.get(position).getTitle())); // установка параметров
             year.setText("Year: " + handle(filmsToShow.get(position).getYear()));
             type.setText("Type: " + handle(filmsToShow.get(position).getType())+" "+freeSpace);
-            System.out.println("GET VIEW 3");
 
             try {
                 ImageView iconImageView = (ImageView) row.findViewById(R.id.poster);
                 posterUrl = filmsToShow.get(position).getPoster(); // адрес изображения
 
-                System.out.println("GET VIEW 4");
+//                ProgressBar progressBar = getActivity().findViewById(R.id.progressBarDetail);
+//                progressBar.setVisibility(View.INVISIBLE);
 
                 PosterHandler handler = new PosterHandler(iconImageView, getActivity(), posterUrl, position, getContext());
                 Thread thread = new Thread(handler);
                 thread.start();
-                System.out.println("GET VIEW 5");
-
             } catch (Exception e){
                 e.printStackTrace();
             }
@@ -301,19 +293,6 @@ public class FilmsList extends Fragment {
             else return str;
         }
     }
-
-//    public boolean isOnline() {
-//        try {
-//            int timeoutMs = 1500;
-//            Socket sock = new Socket();
-//            SocketAddress sockaddr = new InetSocketAddress("8.8.8.8", 53);
-//
-//            sock.connect(sockaddr, timeoutMs);
-//            sock.close();
-//
-//            return true;
-//        } catch (IOException e) { return false; }
-//    }
 
     class SaveFilmsToDB extends Thread { // поток для сохранения фильмов в БД
         SaveFilmsToDB(String name){
@@ -348,10 +327,8 @@ public class FilmsList extends Fragment {
         public void run(){
             List<FilmEntities> entityByRequest = filmDao.getByRequest(REQUEST_FILM_NAME);
             String requestUrl = "http://www.omdbapi.com/?apikey="+API_KEY+"&s="+REQUEST_FILM_NAME+"&page=1";
-            System.out.println(">>>SEARCH HANDLER RUN1");
             try {
-                if (entityByRequest.size() > 0) {
-                    System.out.println("LIST: GET FROM DB");
+                if (!netIsAvailable() & entityByRequest.size() > 0) { // если нед доступа к интернету и в БД нет записей
                     searchedFilms = Film.listFilmEntitiesToListFilms(entityByRequest); // entityByRequest в List<Film>
                     jsonHelperFilms.exportToJSON(getContext(), searchedFilms);
                     try {
@@ -364,13 +341,9 @@ public class FilmsList extends Fragment {
                     }
                     filmsApiGet = true;
                 } else {
-                    System.out.println("TRY DOWNLOAD 1");
                     Ion.with(getContext()).load(requestUrl).asString().setCallback(new FutureCallback<String>() {
                         @Override
                         public void onCompleted(Exception e, String result) {
-                            System.out.println(result);
-                            System.out.println("TRY DOWNLOAD 2");
-
                             if(result==null){
                                 Toast.makeText(getContext(), "There is no internet connection, films were not found in the database.", Toast.LENGTH_LONG).show();
                                 searchedFilms = new ArrayList<>();
@@ -378,21 +351,20 @@ public class FilmsList extends Fragment {
                             else
                                 searchedFilms = jsonHelperFilms.importFilmListFromString(result);
 
-                            System.out.println("TRY DOWNLOAD 3");
-
-
                             jsonHelperFilms.exportToJSON(getContext(), searchedFilms);
 
                             new SaveFilmsToDB("SaveFilms").start();
                             try {
+                                if (searchedFilms==null){
+                                    searchedFilms = new ArrayList<>();
+                                    Toast.makeText(getContext(), "Nothing found", Toast.LENGTH_LONG).show();
+                                }
                                 FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
                                 listView.setAdapter(adapter3);
                             } catch (Exception e2) {
                                 e2.printStackTrace();
                             }
                             filmsApiGet = true;
-                            System.out.println("TRY DOWNLOAD 4");
-
                         }
                     });
                 }
@@ -421,7 +393,6 @@ public class FilmsList extends Fragment {
             this.posterUrl = posterUrl;
             this.position = position;
             this.context = context;
-            System.out.println("POSTER HANDLER INIT");
         }
 
         public void run() {
@@ -437,7 +408,7 @@ public class FilmsList extends Fragment {
                 if (daoByUrl.size() != 0) { // файл есть в БД, проверяем наличие в Кеше
                     String imageCachePath = cacheDir + "/" + daoByUrl.get(0).getFileName();
                     imageExist = new File(imageCachePath).exists(); // bool есть в кеше
-                    System.out.println("FILE:"+daoByUrl.get(0).getFileName()+"; Exist:"+imageExist);
+//                    System.out.println("FILE:"+daoByUrl.get(0).getFileName()+"; Exist:"+imageExist);
                 }
 
                 if (daoByUrl.size() == 0 | !imageExist) { // если нет изображений с таким url
@@ -509,5 +480,18 @@ public class FilmsList extends Fragment {
                 });
             }
         }
+    }
+
+    private static boolean netIsAvailable() {
+        try {
+            final URL url = new URL("http://www.google.com");
+            final URLConnection conn = url.openConnection();
+            conn.connect();
+            conn.getInputStream().close();
+            System.out.println("INTERNET CONNECTION SUCCESS");
+            return true;
+        } catch (Exception e) {}
+        System.out.println("INTERNET CONNECTION FAILED");
+        return false;
     }
 }

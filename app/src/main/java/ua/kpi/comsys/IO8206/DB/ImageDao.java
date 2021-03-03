@@ -11,10 +11,10 @@ import java.util.List;
 @Dao
 public interface ImageDao {
     @Query("SELECT * FROM image")
-    List<PosterEntities> getAll();
+    List<ImageEntities> getAll();
 
     @Query("SELECT * FROM image WHERE id = :id")
-    PosterEntities getById(long id);
+    ImageEntities getById(long id);
 
     @Query("SELECT * FROM image WHERE url = :url")
     List<ImageEntities> getByUrl(String url); // здесь в списке всегда должен быть один элемент,

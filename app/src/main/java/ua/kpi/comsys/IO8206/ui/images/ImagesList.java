@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -148,6 +149,7 @@ public class ImagesList extends Fragment {
             imageViews.add(image9);
 
             int photosNum = imagesToShow.get(position).size();
+            System.out.println("CHECK1");
             for (int i=0; i<9; i++){
                 try {
                     if (i<photosNum){
@@ -175,64 +177,111 @@ public class ImagesList extends Fragment {
         }
 
         public void run(){
-            BufferedReader in = null;
-            try {
-                in = new BufferedReader(new InputStreamReader(url.openStream())); // получаем текст АПИ(json text)
-                String inputLine;
-                String json = "";
-                while (true) {
-                    if ((inputLine = in.readLine()) == null) break;
-                    json += inputLine;
-                }
-
-                List<String> urls = new ArrayList<>();
-
-                String S[] = json.split(imageUrlTarget);
-                for (String str : S){
-                    if (str.substring(0, 4).equals("http")){
-                        urls.add(str.split("\",\"")[0]);
-                    }
-                }
+            if (netIsAvailable()) { // есть соединение
+                BufferedReader in = null;
                 try {
-                    images.clear();
-                }catch (Exception e){}
+                    in = new BufferedReader(new InputStreamReader(url.openStream())); // получаем текст АПИ(json text)
+                    String inputLine;
+                    String json = "";
+                    while (true) {
+                        if ((inputLine = in.readLine()) == null) break;
+                        json += inputLine;
+                    }
 
-                for (String currentUrl : urls){
-                    if (images != null){ //если список изображений не null
-                        if (images.size()==0){ // если список только инициализирован и пустой
+                    List<String> urls = new ArrayList<>();
+
+                    String S[] = json.split(imageUrlTarget);
+                    for (String str : S) {
+                        if (str.substring(0, 4).equals("http")) {
+                            urls.add(str.split("\",\"")[0]);
+                        }
+                    }
+                    try {
+                        images.clear();
+                    } catch (Exception e) {
+                    }
+
+                    for (String currentUrl : urls) {
+                        if (images != null) { //если список изображений не null
+                            if (images.size() == 0) { // если список только инициализирован и пустой
+                                List<String> tempImageList = new ArrayList<>();
+                                images.add(tempImageList);
+                            }
+                            if (images.get(images.size() - 1).size() >= 9) { // если в последнем элементе списка не меньше девяти элементов
+                                List<String> tempImageList = new ArrayList<>();
+                                tempImageList.add(currentUrl);
+                                images.add(tempImageList);
+                            } else { // если меньше девяти элементов
+                                images.get(images.size() - 1).add(currentUrl);
+                            }
+                        }
+                    }
+
+                    System.out.println("I//SIZE: "+images.size()+"; IMAGES: "+images);
+
+                    in.close();
+
+                    listView = root.findViewById(R.id.imagesList); // получить лисьВью
+
+                    getActivity().runOnUiThread(new Runnable() { // перенос установки адаптера в основной поток
+                        @Override
+                        public void run() {
+                            if (images != null) {
+                                adapter = new ImageAdapter(getActivity(), R.layout.images_list, images); // объект кастомного адаптера
+
+                                listView.setAdapter(adapter); // установка адаптера
+                            } else {
+                                Toast.makeText(getContext(), "Failed to get data", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            else { // нет соединения
+                System.out.println("ENTER WITHOUT CONNECTION");
+                List<ImageEntities> imageEntities = imageDao.getAll();
+                System.out.println("NUM OF ENTITY: "+imageEntities.size());
+
+                for (ImageEntities currentEntity : imageEntities) {
+//                    images = new ArrayList<>();
+                    if (images != null) { //если список изображений не null
+                        if (images.size() == 0) { // если список только инициализирован и пустой
                             List<String> tempImageList = new ArrayList<>();
                             images.add(tempImageList);
                         }
-                        if (images.get(images.size()-1).size()>=9){ // если в последнем элементе списка не меньше девяти элементов
+                        if (images.get(images.size() - 1).size() >= 9) { // если в последнем элементе списка не меньше девяти элементов
                             List<String> tempImageList = new ArrayList<>();
-                            tempImageList.add(currentUrl);
+                            tempImageList.add(currentEntity.getUrl());
                             images.add(tempImageList);
-                        }
-                        else { // если меньше девяти элементов
-                            images.get(images.size()-1).add(currentUrl);
+                        } else { // если меньше девяти элементов
+                            images.get(images.size() - 1).add(currentEntity.getUrl());
                         }
                     }
                 }
 
-                in.close();
+                System.out.println("NI//SIZE: "+images.size()+"; IMAGES: "+images);
 
-                listView = root.findViewById(R.id.imagesList); // получить лисьВью
+
 
                 getActivity().runOnUiThread(new Runnable() { // перенос установки адаптера в основной поток
                     @Override
                     public void run() {
-                        if(images != null){
+                        Toast.makeText(getContext(), "No internet connection", Toast.LENGTH_LONG).show();
+
+                        if (images != null) {
+                            listView = root.findViewById(R.id.imagesList); // получить лисьВью
+
                             adapter = new ImageAdapter(getActivity(), R.layout.images_list, images); // объект кастомного адаптера
 
                             listView.setAdapter(adapter); // установка адаптера
-                        }
-                        else{
+                        } else {
                             Toast.makeText(getContext(), "Failed to get data", Toast.LENGTH_LONG).show();
                         }
                     }
                 });
-            } catch (Exception e){
-                e.printStackTrace();
             }
         }
     }
@@ -364,4 +413,16 @@ public class ImagesList extends Fragment {
         }
     }
 
+    private static boolean netIsAvailable() {
+        try {
+            final URL url = new URL("http://www.google.com");
+            final URLConnection conn = url.openConnection();
+            conn.connect();
+            conn.getInputStream().close();
+            System.out.println("INTERNET CONNECTION SUCCESS");
+            return true;
+        } catch (Exception e) {}
+        System.out.println("INTERNET CONNECTION FAILED");
+        return false;
+    }
 }
