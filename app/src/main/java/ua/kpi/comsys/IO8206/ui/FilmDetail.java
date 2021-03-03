@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 
 import ua.kpi.comsys.IO8206.Film;
@@ -88,7 +89,7 @@ public class FilmDetail extends AppCompatActivity {
 
         public void run(){
             BufferedReader in = null;
-            try{
+            try{ // выполнится, если ОнЛайн
                 in = new BufferedReader(new InputStreamReader(url.openStream())); // получаем текст АПИ(json text)
                 String inputLine;
                 String json = "";
@@ -124,32 +125,76 @@ public class FilmDetail extends AppCompatActivity {
                         @Override
                         public void run() {
                             title.setText(film.getTitle());
-                            releasedDate.setText("Released: "+film.getReleased());
-                            rated.setText("Rated: "+film.getRated());
-                            runtime.setText("Runtime: "+film.getRuntime());
-                            genre.setText("Genre: "+film.getGenre());
-                            imdbRating.setText("IMDB: "+film.getImdbRating());
-                            imdbVotes.setText("("+film.getImdbVotes()+")");
-                            production.setText("Production: "+film.getProduction());
-                            type.setText("Type: "+film.getType());
-                            director.setText("Director: "+film.getDirector());
-                            writer.setText("Writer: "+film.getWriter());
-                            language.setText("Language: "+film.getLanguage());
-                            country.setText("Country: "+film.getCountry());
-                            awards.setText("Awards: "+film.getAwards());
-                            actors.setText("Actors: "+film.getActors());
+                            releasedDate.setText("Released: " + film.getReleased());
+                            rated.setText("Rated: " + film.getRated());
+                            runtime.setText("Runtime: " + film.getRuntime());
+                            genre.setText("Genre: " + film.getGenre());
+                            imdbRating.setText("IMDB: " + film.getImdbRating());
+                            imdbVotes.setText("(" + film.getImdbVotes() + ")");
+                            production.setText("Production: " + film.getProduction());
+                            type.setText("Type: " + film.getType());
+                            director.setText("Director: " + film.getDirector());
+                            writer.setText("Writer: " + film.getWriter());
+                            language.setText("Language: " + film.getLanguage());
+                            country.setText("Country: " + film.getCountry());
+                            awards.setText("Awards: " + film.getAwards());
+                            actors.setText("Actors: " + film.getActors());
                             plot.setText(film.getPlot());
 
                             String posterUrl = film.getPoster();
 
                             try {
                                 new DownloadPosterTask(poster).execute(posterUrl); // устанавливаем изображение
-                            } catch (Exception e){}
+                            } catch (Exception e) {}
                         }
                     });
                 }
                 else {Toast.makeText(context, "Information not found", Toast.LENGTH_LONG).show(); finish();}
-            } catch (Exception e){e.printStackTrace();}
+            } catch (Exception e){ // если оффлайн
+                e.printStackTrace();
+
+                TextView title = findViewById(R.id.filmTitleDetail); // находим все элементы
+                TextView releasedDate = findViewById(R.id.filmReleasedDetail);
+                TextView rated = findViewById(R.id.filmRatedDetail);
+                TextView runtime = findViewById(R.id.filmRuntimeDetail);
+                TextView genre = findViewById(R.id.filmGenreDetail);
+                TextView imdbRating = findViewById(R.id.filmImdbRatingDetail);
+                TextView imdbVotes = findViewById(R.id.filmImdbVotesDetail);
+                TextView production = findViewById(R.id.filmProductionDetail);
+                TextView type = findViewById(R.id.filmTypeDetail);
+                TextView director = findViewById(R.id.filmDirectorDetail);
+                TextView writer = findViewById(R.id.filmWriterDetail);
+                TextView language = findViewById(R.id.filmLanguageDetail);
+                TextView country = findViewById(R.id.filmCountryDetail);
+                TextView awards = findViewById(R.id.filmAwardsDetail);
+                TextView actors = findViewById(R.id.filmActorsDetail);
+                TextView plot = findViewById(R.id.filmPlotDetail);
+                ImageView poster = (ImageView) findViewById(R.id.filmPosterDetail);
+
+                runOnUiThread(new Runnable() { // перенос установки параметров элементов в основной поток
+                    @Override
+                    public void run() {
+                        title.setText("No internet access...");
+                        releasedDate.setText("");
+                        rated.setText("");
+                        runtime.setText("");
+                        genre.setText("");
+                        imdbRating.setText("");
+                        imdbVotes.setText("");
+                        production.setText("");
+                        type.setText("");
+                        director.setText("");
+                        writer.setText("");
+                        language.setText("");
+                        country.setText("");
+                        awards.setText("");
+                        actors.setText("");
+                        plot.setText("");
+
+                        poster.setImageResource(R.drawable.white_background);
+                    }
+                });
+            }
         }
     }
 }

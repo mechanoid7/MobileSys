@@ -15,7 +15,7 @@
         android:layout_height="150dp">
 
         <ProgressBar
-            android:id="@+id/progressBarDetail"
+            android:id="@+id/progressBarList"
             style="?android:attr/progressBarStyle"
             android:layout_width="60dp"
             android:layout_height="60dp"

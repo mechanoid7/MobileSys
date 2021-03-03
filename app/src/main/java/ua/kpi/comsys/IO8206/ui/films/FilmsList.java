@@ -18,7 +18,6 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.TextClock;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,13 +32,8 @@ import com.koushikdutta.ion.Ion;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -65,9 +59,7 @@ public class FilmsList extends Fragment {
     ListView listView;
     Boolean elemAddOnStop = false; // добавление элемента и необходимо обновить список
     Boolean searchMode = false; // режим поиска по списку
-    Boolean filmsApiGet = false; // фильмы получены мз сайта
 //    String userFileMovie =  "movieslistuser.txt"; // стандартное значение, которое заменится
-    String freeSpace = (new String(new char[100]).replace("\0", "\t"));
     Film removedElement=null;
     String API_KEY = "ed68b378";
     String REQUEST_FILM_NAME;
@@ -203,7 +195,6 @@ public class FilmsList extends Fragment {
 
                     try {
                         REQUEST_FILM_NAME = FilmsList.this.searchRequest;
-                        filmsApiGet = false;
                         REQUEST_FILM_NAME = REQUEST_FILM_NAME.replace(" ", "+");
 
                         while (REQUEST_FILM_NAME.startsWith("+")) REQUEST_FILM_NAME = REQUEST_FILM_NAME.substring(1); // вырезаем пробелы(+) из начала строки
@@ -227,31 +218,6 @@ public class FilmsList extends Fragment {
         return root;
     }
 
-
-//    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-//        ImageView bmImage;
-//
-//        public DownloadImageTask(ImageView bmImage) {
-//            this.bmImage = bmImage;
-//        }
-//
-//        protected Bitmap doInBackground(String... urls) {
-//            String urldisplay = urls[0];
-//            Bitmap mIcon11 = null;
-//            try {
-//                InputStream in = new java.net.URL(urldisplay).openStream();
-//                mIcon11 = BitmapFactory.decodeStream(in);
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//            return mIcon11;
-//        }
-//
-//        protected void onPostExecute(Bitmap result) {
-//            bmImage.setImageBitmap(result);
-//        }
-//    }
-
     private class FilmAdapter extends ArrayAdapter<Film>{ // свой адаптер
         FilmAdapter(Context context, int textViewResourceId, List<Film> objects) {
             super(context, textViewResourceId, objects);
@@ -269,16 +235,14 @@ public class FilmsList extends Fragment {
 
             title.setText(handle(filmsToShow.get(position).getTitle())); // установка параметров
             year.setText("Year: " + handle(filmsToShow.get(position).getYear()));
-            type.setText("Type: " + handle(filmsToShow.get(position).getType())+" "+freeSpace);
+            type.setText("Type: " + handle(filmsToShow.get(position).getType()));
 
             try {
                 ImageView iconImageView = (ImageView) row.findViewById(R.id.poster);
                 posterUrl = filmsToShow.get(position).getPoster(); // адрес изображения
+                ProgressBar progressBar = row.findViewById(R.id.progressBarList); // знак загрузки
 
-//                ProgressBar progressBar = getActivity().findViewById(R.id.progressBarDetail);
-//                progressBar.setVisibility(View.INVISIBLE);
-
-                PosterHandler handler = new PosterHandler(iconImageView, getActivity(), posterUrl, position, getContext());
+                PosterHandler handler = new PosterHandler(iconImageView, getActivity(), posterUrl, position, getContext(), progressBar);
                 Thread thread = new Thread(handler);
                 thread.start();
             } catch (Exception e){
@@ -334,12 +298,17 @@ public class FilmsList extends Fragment {
                     try {
                         if (searchedFilms == null)
                             searchedFilms = new ArrayList<>();
-                        FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
-                        listView.setAdapter(adapter3);
+                        getActivity().runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
+                            @Override
+                            public void run() {
+                                FilmAdapter adapter3 = new FilmAdapter(getActivity(), R.layout.films_list, searchedFilms); // адаптер с новыми фильмами
+                                listView.setAdapter(adapter3);
+                            }
+                        });
+
                     } catch (Exception e2) {
                         e2.printStackTrace();
                     }
-                    filmsApiGet = true;
                 } else {
                     Ion.with(getContext()).load(requestUrl).asString().setCallback(new FutureCallback<String>() {
                         @Override
@@ -364,7 +333,6 @@ public class FilmsList extends Fragment {
                             } catch (Exception e2) {
                                 e2.printStackTrace();
                             }
-                            filmsApiGet = true;
                         }
                     });
                 }
@@ -372,11 +340,7 @@ public class FilmsList extends Fragment {
                 e.printStackTrace();
             }
 
-//            getActivity().runOnUiThread(new Runnable() { // этот код выполнится в основном потоке
-//                @Override
-//                public void run() {
-//                }
-//            });
+
         }
     }
 
@@ -386,13 +350,15 @@ public class FilmsList extends Fragment {
         protected String posterUrl;
         protected Context context;
         protected int position;
+        protected ProgressBar progressBar;
 
-        public PosterHandler(ImageView imageView, Activity uiActivity, String posterUrl, int position, Context context) {
+        public PosterHandler(ImageView imageView, Activity uiActivity, String posterUrl, int position, Context context, ProgressBar progressBar) {
             this.imageView = imageView;
             this.uiActivity = uiActivity;
             this.posterUrl = posterUrl;
             this.position = position;
             this.context = context;
+            this.progressBar = progressBar;
         }
 
         public void run() {
@@ -465,6 +431,7 @@ public class FilmsList extends Fragment {
                         @Override
                         public void run() {
                             imageView.setImageBitmap(userImage); // установка фото
+                            progressBar.setVisibility(View.GONE); // убираем знак загрузки
                         }
                     });
                 } catch (Exception e) {
@@ -476,6 +443,7 @@ public class FilmsList extends Fragment {
                     @Override
                     public void run() {
                         imageView.setImageResource(R.drawable.ic_image_not_found); // установка изображения("Отсутствует")
+                        progressBar.setVisibility(View.GONE); // убираем знак загрузки
                     }
                 });
             }

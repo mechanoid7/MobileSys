@@ -36,7 +36,6 @@ import ua.kpi.comsys.IO8206.DB.App;
 import ua.kpi.comsys.IO8206.DB.AppDatabase;
 import ua.kpi.comsys.IO8206.DB.ImageDao;
 import ua.kpi.comsys.IO8206.DB.ImageEntities;
-//import ua.kpi.comsys.IO8206.DB.PosterEntities;
 import ua.kpi.comsys.IO8206.R;
 
 public class ImagesList extends Fragment {

@@ -13,8 +13,7 @@ Updates:
 - Data saves in SQLite DB (TextRequest:{FilmList}, ...);
 - Fix bug when keyboard hide/show text may be blink;
 - Fix crash if search without internet connection.
+- Fix bug if search film without internet connection and film is in the DB, user must hide keyboarm to show film list.
 
-Note:
 
-- If film search without internet connection and films is in the DB, user must hide the keyboard to show list of film.
 
